@@ -1,0 +1,28 @@
+{
+  "name": "bluecord",
+  "version": "1.0.0",
+  "description": "Bluesky Discord bot",
+  "main": "index.js",
+  "scripts": {
+    "clean": "del /s /q build",
+    "build": "tsc --build",
+    "start": "npm run clean && npm run build && node build/index.js",
+    "startNoClean": "npm run build && node build/index.js",
+    "dev": "npm run clean && npm run build && node build/index.js --development",
+    "devNoClean": "npm run build && node build/index.js --development"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@atproto/api": "^0.13.12",
+    "@types/node": "^22.7.7",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "glob": "^11.0.0",
+    "mongoose": "^8.7.2",
+    "ms": "^2.1.3"
+  },
+  "devDependencies": {
+    "@types/ms": "^0.7.34"
+  }
+}
