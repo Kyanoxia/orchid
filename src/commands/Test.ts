@@ -10,7 +10,7 @@ export default class Test extends Command {
             description: "Test Command",
             category: Category.Utilities,
             default_member_permissions: PermissionsBitField.Flags.UseApplicationCommands,
-            dm_permission: true,
+            global_permission: true,
             cooldown: 3,
             options: [],
             dev: false

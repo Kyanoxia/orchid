@@ -11,7 +11,7 @@ export default class Command implements ICommand {
     category: Category;
     options: object;
     default_member_permissions: bigint;
-    dm_permission: boolean;
+    global_permission: boolean;
     cooldown: number;
     dev: boolean;
 
@@ -22,7 +22,7 @@ export default class Command implements ICommand {
         this.category = options.category;
         this.options = options.options;
         this.default_member_permissions = options.default_member_permissions;
-        this.dm_permission = options.dm_permission;
+        this.global_permission = options.global_permission;
         this.cooldown = options.cooldown;
         this.dev = options.dev;
     }

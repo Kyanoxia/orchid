@@ -17,7 +17,7 @@ export default class Ready extends Event {
     async Execute() {
         configDotenv();
 
-        console.log(`${this.client.user?.tag} is now ready!`);
+        console.log(`[LOG // SUCCESS] ${this.client.user?.tag} is now ready!`);
 
         const clientID = this.client.developmentMode ? process.env.devDiscordClientID : process.env.discordClientID;
         const rest = new REST().setToken(process.env.token);
@@ -27,14 +27,14 @@ export default class Ready extends Event {
                 body: this.GetJson(this.client.commands.filter(command => !command.dev))
             });
 
-            console.log(`Successfully set ${globalCommands.length} Global Application (/) Commands`)
+            console.log(`[LOG // SUCCESS] Successfully set ${globalCommands.length} Global Application (/) Commands`)
         }
 
         const devCommands: any = await rest.put(Routes.applicationGuildCommands(clientID, process.env.devGuildID), {
             body: this.GetJson(this.client.commands.filter(command => command.dev))
         });
 
-        console.log(`Successfully set ${devCommands.length} Developer Application (/) Commands`)
+        console.log(`[LOG // SUCCESS] Successfully set ${devCommands.length} Developer Application (/) Commands`)
     }
 
     private GetJson(commands: Collection<string, Command>): object[] {
@@ -46,9 +46,9 @@ export default class Ready extends Event {
                 description: command.description,
                 options: command.options,
                 default_member_permissions: command.default_member_permissions.toString(),
-                dm_permission: command.dm_permission,
-                integration_types: [0, 1],
-                contexts: [0, 1, 2]
+                dm_permission: command.global_permission,
+                integration_types: command.global_permission ? [0, 1] : [0],
+                contexts: command.global_permission ? [0, 1, 2] : [0]
             })
         });
 

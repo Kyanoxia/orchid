@@ -10,7 +10,7 @@ export default class Emit extends Command {
             description: "Emit an event",
             dev: true,
             default_member_permissions: PermissionsBitField.Flags.Administrator,
-            dm_permission: false,
+            global_permission: false,
             category: Category.Developer,
             cooldown: 1,
             options: [

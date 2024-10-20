@@ -29,14 +29,14 @@ export default class CustomClient extends Client implements ICustomClient
     }
 
     init(): void {
-        console.log(`Starting the bot in ${this.developmentMode ? "Development" : "Production"} mode`);
+        console.log(`[LOG // STATUS] Starting the bot in ${this.developmentMode ? "Development" : "Production"} mode`);
         this.LoadHandlers();
 
         this.login(this.developmentMode ? process.env.devToken : process.env.token)
             .catch((err) => console.error(err));
         
         connect(this.developmentMode ? process.env.devMongoURL : process.env.mongoURL)
-            .then(() => console.log("Connected to MongoDB"))
+            .then(() => console.log("[LOG // SUCCESS] Connected to MongoDB"))
             .catch((err) => console.error(err));
     }
 

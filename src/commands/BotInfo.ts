@@ -12,7 +12,7 @@ export default class BotInfo extends Command {
             description: "Display Bot Information",
             category: Category.Utilities,
             default_member_permissions: PermissionsBitField.Flags.UseApplicationCommands,
-            dm_permission: false,
+            global_permission: true,
             cooldown: 3,
             options: [],
             dev: false

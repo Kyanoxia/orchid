@@ -10,7 +10,7 @@ export default class TestDev extends Command {
             description: "Test Dev-Only Command",
             category: Category.Utilities,
             default_member_permissions: PermissionsBitField.Flags.SendMessages,
-            dm_permission: true,
+            global_permission: false,
             cooldown: 3,
             options: [],
             dev: true
