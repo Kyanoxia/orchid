@@ -15,15 +15,15 @@ export default class GuildCreate extends Event {
     async Execute(guild: Guild) {
         try {
             if (!await GuildConfig.exists({ guildID: guild.id }))
-                await GuildConfig.create({ guildID: guild.id })
+                await GuildConfig.create({ guildID: guild.id }) && console.log(`[LOG // STATUS] Bot joined a new server - adding to database: ${guild.id}`);
         } catch (err) {
             console.error(err);
         }
 
         const owner = await guild.fetchOwner();
         owner?.send({ embeds: [new EmbedBuilder()
-            .setColor("Green")
-            .setDescription("Bluecord has successfully joined your server!  Thank you for your patronage!")
+            .setColor("#8AC3FF")
+            .setDescription("✅ Bluecord has added your server to it's database!  Thank you for your patronage!\nIf you would like to delete this entry, please kick the bot from your server.")
         ]})
         .catch();
     }

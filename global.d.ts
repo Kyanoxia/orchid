@@ -3,6 +3,7 @@ declare global {
         interface ProcessEnv {
             token: string;
             discordClientID: string;
+            discordUID: string;
             mongoURL: string;
             devToken: string;
             devDiscordClientID: string;
