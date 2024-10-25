@@ -22,11 +22,11 @@ export default class GetDatabase extends Command {
 
     Execute(interaction: ChatInputCommandInteraction) {
         SubscriberConfig.find({}).then((db) => {
-            // Loop through the db
             db.forEach((element) => {
                 console.log(element);
             });
-            //console.log(JSON.parse(data[0].props));
         });
+
+        interaction.reply({ content: "_ _", ephemeral: true })
     }
 }
