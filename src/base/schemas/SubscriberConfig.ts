@@ -2,14 +2,12 @@ import { model, Schema } from "mongoose";
 
 interface ISubscriberConfig {
     guildID: string;
-    channelID: string;
-    accounts: JSON;
+    props: string;
 }
 
 export default model<ISubscriberConfig>("SubscriberConfig", new Schema<ISubscriberConfig>({
     guildID: String,
-    channelID: String,
-    accounts: JSON,
+    props: String,
 }, {
     timestamps: true
 }))

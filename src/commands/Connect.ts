@@ -28,20 +28,27 @@ export default class Connect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        if (await SubscriberConfig.find({ "guildID": interaction.guildId }) == null)
+        const sub = new Subscriber(interaction.guildId!, interaction.channelId, interaction.options.getString("username")!, "Hello World");
+
+        if (!await SubscriberConfig.exists({ guildID: sub.guild }))
         {
-            //await SubscriberConfig.create(interaction.guildId, interaction.channelId, interaction.options.getString("username"));
-            console.log(`[LOG // STATUS] No valid entry for guildID: ${interaction.guildId} has been found.  Creating entry...`);
+            console.log(`[LOG // STATUS] Subscribing to ${interaction.options.getString("username")} in guild: ${interaction.guildId}...`);
+            await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())})
         }
+
+        // Get document by field value and use data (WHY THE FUCK DID THEY ABANDON CALLBACKS WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
+        SubscriberConfig.find({}).then((db) => {
+            // Loop through the db
+            db.forEach((element) => {
+                console.log(element);
+            });
+            //console.log(JSON.parse(data[0].props));
+        });
 
         interaction.reply({ embeds: [new EmbedBuilder()
             .setColor("Green")
             .setDescription(`✅ Subscribed to user ${interaction.options.getString("username")} in channel <#${interaction.channelId}>`)
         ]
         });
-        
-        let sub = new Subscriber(interaction.guildId!, interaction.channelId, interaction.options.getString("username")!, "Hello World");
-
-        console.log(sub.toJSON());
     }
 }

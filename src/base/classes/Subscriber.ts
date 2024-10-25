@@ -1,5 +1,4 @@
 import { ChatInputCommandInteraction, AutocompleteInteraction } from "discord.js";
-import CustomClient from "./CustomClient";
 import ISubscriber from "../interfaces/iSubscriber";
 
 export default class Subscriber implements ISubscriber {

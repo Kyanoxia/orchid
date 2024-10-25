@@ -1,4 +1,4 @@
-import { Collection, Events, Integration, REST, Routes } from "discord.js";
+import { ActivityType, Collection, Events, Integration, REST, Routes } from "discord.js";
 import CustomClient from "../../base/classes/CustomClient";
 import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";
@@ -35,6 +35,13 @@ export default class Ready extends Event {
         });
 
         console.log(`[LOG // SUCCESS] Successfully set ${devCommands.length} Developer Application (/) Commands`)
+
+        this.client.user?.setPresence({
+            activities: [{
+                name: 'with my cock',
+                type: ActivityType.Playing,
+            }]
+        })
     }
 
     private GetJson(commands: Collection<string, Command>): object[] {
