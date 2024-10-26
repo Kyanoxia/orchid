@@ -21,6 +21,13 @@ export default class Connect extends Command {
                     required: true,
                     type: ApplicationCommandOptionType.String,
                     choices: []
+                },
+                {
+                    name: "message",
+                    description: "The message to preface announcements with",
+                    required: true,
+                    type: ApplicationCommandOptionType.String,
+                    choices: []
                 }
             ],
             dev: false
@@ -28,22 +35,85 @@ export default class Connect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        const sub = new Subscriber(interaction.guildId!, interaction.channelId, interaction.options.getString("username")!, "Hello World");
+        const sub = new Subscriber(interaction.guildId!, interaction.channelId, interaction.options.getString("username")!, interaction.options.getString("message")!);
 
+        // If our guild isn't registered, register it
         if (!await SubscriberConfig.exists({ guildID: sub.guild }))
         {
-            console.log(`[LOG // STATUS] Subscribing to ${interaction.options.getString("username")} in guild: ${interaction.guildId}...`);
-            await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())})
+            console.log(`[LOG // STATUS] Subscribing to ${sub.username} in guild: ${sub.guild}...`);
+            await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`[LOG // SUCCESS] Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel}`)})
         }
+        else
+        {
+            SubscriberConfig.find({ guildID: sub.guild }).then((db) => {
+                var mongo = JSON.parse(db[0].props);
 
-        // Get document by field value and use data (WHY THE FUCK DID THEY ABANDON CALLBACKS WAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA)
-        SubscriberConfig.find({}).then((db) => {
-            // Loop through the db
-            db.forEach((element) => {
-                console.log(element);
+                var channelPresent: boolean = false;
+                // Check if our channel is present
+                for (var channel in mongo)
+                {
+                    // If we find ours
+                    if (channel == sub.channel)
+                    {
+                        channelPresent = true;
+                        
+                        var subPresent: boolean = false;
+                        // Check if our sub is present
+                        for (var user in mongo[channel])
+                        {
+                            if (user == sub.username)
+                            {
+                                subPresent = true;
+                                // If our message is not the same, CHANGE IT
+                                if (mongo[channel][user].message != sub.message)
+                                {
+                                    mongo[channel][user].message = sub.message;
+                                    console.log(mongo[channel][user].message);
+                                }
+
+                                // Stop checking (duh)
+                                //break;
+                            }
+                        }
+
+                        if (!subPresent)
+                        {
+                            // Add it to the channel
+                            mongo[channel] = {
+                                ...mongo[channel],
+                                [sub.username]:
+                                {
+                                    message: sub.message
+                                }
+                            }
+                        }
+
+                        // Don't check any more
+                        //break;
+                    }
+                }
+
+                if (!channelPresent)
+                {
+                    // Register a subscriber to the channel
+                    mongo = {
+                        ...mongo,
+                        [sub.channel]:
+                        {
+                            [sub.username]:
+                            {
+                                message: sub.message
+                            }
+                        }
+                    }
+                }
+
+                console.log(mongo);
+
+                // Update the database
+                SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
             });
-            //console.log(JSON.parse(data[0].props));
-        });
+        }
 
         interaction.reply({ embeds: [new EmbedBuilder()
             .setColor("Green")

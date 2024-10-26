@@ -2,7 +2,6 @@ import { ChatInputCommandInteraction, Collection, EmbedBuilder, Events, Guild } 
 import CustomClient from "../../base/classes/CustomClient";
 import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";
-import GuildConfig from "../../base/schemas/GuildConfig";
 import { configDotenv } from "dotenv";
 
 export default class CommandHandler extends Event {
@@ -16,12 +15,6 @@ export default class CommandHandler extends Event {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         configDotenv();
-        
-        if (!await GuildConfig.exists({ guildID: interaction.guildId }) && interaction.guild?.members.fetch(process.env.discordUID)) 
-        {
-            await GuildConfig.create({ guildID: interaction.guildId }) && console.log(`[LOG // WARN] But joined a new server but did not fire event - Firing Join event as ${interaction.guildId}...`);
-            this.client.emit(Events.GuildCreate, interaction.guild as Guild);
-        }
 
         if (!interaction.isChatInputCommand()) return;
 

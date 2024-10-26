@@ -27,6 +27,7 @@ export default class BotInfo extends Command {
                 .setDescription(`
                         <:bsky:1299097267751485460> __**BOT INFO**__
                         > **User:** \`${this.client.user?.tag}\` - \`${this.client.user?.id}\`
+                        > **Guilds:** \`${this.client.guilds.cache.size}\`
                         > **Account Created:** <t:${(this.client.user!.createdTimestamp / 1000).toFixed(0)}:R>
                         > **Commands Registered:** \`${this.client.commands.size}\`
                         > **Version:** \`${version}\`

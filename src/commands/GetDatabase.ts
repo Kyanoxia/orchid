@@ -2,15 +2,13 @@ import { ApplicationCommandOptionBase, ApplicationCommandOptionType, ChatInputCo
 import Command from "../base/classes/Command";
 import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
-const { version, dependencies } = require(`${process.cwd()}/package.json`);
-import ms from "ms";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
 
 export default class GetDatabase extends Command {
     constructor(client: CustomClient) {
         super(client, {
             name: "getdatabase",
-            description: "Gets EVERY SINGLE FUCKING ENTRY TO THE DATABASE (index at large no param)",
+            description: "Gets every subscriber database entry",
             category: Category.Utilities,
             default_member_permissions: PermissionsBitField.Flags.UseApplicationCommands,
             global_permission: true,
@@ -27,6 +25,14 @@ export default class GetDatabase extends Command {
             });
         });
 
-        interaction.reply({ content: "_ _", ephemeral: true })
+        this.client.guilds.cache.forEach(guild => {
+            const channels = guild?.channels ? JSON.parse(
+                JSON.stringify(guild.channels)
+            ).guild.channels : [];
+
+            console.log(guild.id, channels);
+        })
+
+        interaction.reply({ content: "Please check your developer console...", ephemeral: true })
     }
 }

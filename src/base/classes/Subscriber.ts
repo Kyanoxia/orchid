@@ -22,18 +22,16 @@ export default class Subscriber implements ISubscriber {
     }
 
     toJSON(): object[] {
-        const guild = this.guild;
         const channel = this.channel;
         const username = this.username;
         const message = this.message;
 
         var json: any = {
-            [guild]:
+            [channel]:
             {
-                [channel]:
+                [username]:
                 {
-                    username: username,
-                    message: message,
+                    message: message
                 }
             }
         }
