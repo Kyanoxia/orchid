@@ -2,7 +2,6 @@ import { ApplicationCommandOptionType, ChatInputCommandInteraction, EmbedBuilder
 import Command from "../base/classes/Command";
 import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
-import Subscriber from "../base/classes/Subscriber";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
 
 export default class Disconnect extends Command {
@@ -30,10 +29,12 @@ export default class Disconnect extends Command {
     async Execute(interaction: ChatInputCommandInteraction) {
         const username = interaction.options.getString("username");
 
+        console.log(`[LOG // STATUS] Unsubscribing to ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
+
         // If our guild isn't registered, register it
         if (!await SubscriberConfig.exists({ guildID: interaction.guildId }))
         {
-            console.log(`[LOG // STATUS] Cannot delete subscription in unregistered guild: ${interaction.guildId}`);
+            console.log(`[LOG // WARN] Cannot delete subscription in unregistered guild: ${interaction.guildId}`);
             interaction.reply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(`❌ Can not delete subscription in unregistered guild!`)
@@ -87,9 +88,11 @@ export default class Disconnect extends Command {
 
                 interaction.reply({ embeds: [new EmbedBuilder()
                     .setColor("Red")
-                    .setDescription(`❌ Unsubscribed to user ${interaction.options.getString("username")} in channel <#${interaction.channelId}>`)
+                    .setDescription(`❌ Unsubscribed to user ${username} in channel <#${interaction.channelId}>`)
                 ]
                 });
+
+                console.log(`[LOG // SUCCESS] Unsubscribed from user ${username} in ${interaction.guildId} / ${interaction.channelId}`);
             });
         }
     }

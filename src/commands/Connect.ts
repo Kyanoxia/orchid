@@ -112,6 +112,10 @@ export default class Connect extends Command {
 
                 // Update the database
                 SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
+
+                //feed.items.forEach(item => {
+                //    console.log(item.title + ':' + item.link) // item will have a `bar` property type as a number
+                //});
             });
         }
 
