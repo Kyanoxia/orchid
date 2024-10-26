@@ -1,5 +1,6 @@
 import { ActivityType, Collection, Events, Integration, REST, Routes } from "discord.js";
-import { AtpAgent } from '@atproto/api'
+import { Agent } from '@atproto/api'
+import { OAuthClient } from '@atproto/oauth-client'
 import CustomClient from "../../base/classes/CustomClient";
 import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";
