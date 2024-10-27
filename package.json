@@ -1,6 +1,6 @@
 {
   "name": "bluecord",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Bluesky Discord bot",
   "main": "index.js",
   "scripts": {

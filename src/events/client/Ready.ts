@@ -5,6 +5,7 @@ import Command from "../../base/classes/Command";
 import { configDotenv } from "dotenv";
 import SubscriberConfig from "../../base/schemas/SubscriberConfig";
 import axios from "axios";
+import { Callback } from "mongoose";
 
 export default class Ready extends Event {
     constructor(client: CustomClient)
@@ -21,22 +22,23 @@ export default class Ready extends Event {
 
         console.log(`[LOG // SUCCESS] ${this.client.user?.tag} is now ready!`);
 
-        const clientID = this.client.developmentMode ? process.env.devDiscordClientID : process.env.discordClientID;
+        const clientID = process.env.discordClientID;
         const rest = new REST().setToken(process.env.token);
 
-        if (!this.client.developmentMode) {
-            const globalCommands: any = await rest.put(Routes.applicationCommands(clientID), {
-                body: this.GetJson(this.client.commands.filter(command => !command.dev))
-            });
-
-            console.log(`[LOG // SUCCESS] Successfully set ${globalCommands.length} Global Application (/) Commands`)
-        }
-
-        const devCommands: any = await rest.put(Routes.applicationGuildCommands(clientID, process.env.devGuildID), {
-            body: this.GetJson(this.client.commands.filter(command => command.dev))
+        const globalCommands: any = await rest.put(Routes.applicationCommands(clientID), {
+            body: this.GetJson(this.client.commands.filter(command => !command.dev))
         });
 
-        console.log(`[LOG // SUCCESS] Successfully set ${devCommands.length} Developer Application (/) Commands`)
+        console.log(`[LOG // SUCCESS] Successfully set ${globalCommands.length} Global Application (/) Commands`)
+
+        if (this.client.developmentMode)
+        {
+            const devCommands: any = await rest.put(Routes.applicationGuildCommands(clientID, process.env.devGuildID), {
+                body: this.GetJson(this.client.commands.filter(command => command.dev))
+            });
+    
+            console.log(`[LOG // SUCCESS] Successfully set ${devCommands.length} Developer Application (/) Commands`)
+        }
 
         this.client.user?.setPresence({
             activities: [{
@@ -45,9 +47,7 @@ export default class Ready extends Event {
             }]
         })
 
-        setInterval(() => {
-            this.StartScanning();
-        }, 10000);
+        await this.StartScanning();
     }
 
     private GetJson(commands: Collection<string, Command>): object[] {
@@ -66,33 +66,46 @@ export default class Ready extends Event {
         });
 
         return data;
-    }
+    }    
 
     private async StartScanning() {
+        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
         const db = await SubscriberConfig.find({});
-        db.forEach(async (element) => {
-            const props = JSON.parse(element.props);
-            const guild = element.guildID;
+        
+        for (const i in db)
+        {
+            const props = JSON.parse(db[i].props);
+            const guild = db[i].guildID;
 
             const guilds = Array.from(this.client.guilds.cache.map(guild => guild.id));
 
             var postTime: string;
+            var embedProvider: string;
+            var replies: boolean;
 
             // Delete document if we aren't in the guild anymore
             if (!guilds.includes(guild))
             {
                 console.log(`[LOG // STATUS] No longer in guild ${guild}. Deleting document...`)
-                SubscriberConfig.deleteMany({ guildID: guild }).catch();
+                await SubscriberConfig.deleteMany({ guildID: guild }).catch();
                 return;
             }
 
-            for (var channel in props)
+            for (const channel in props)
             {
-                for (var user in props[channel])
+                for (const user in props[channel])
                 {
                     const message = props[channel][user].message;
+                    const filterReplies: string = props[channel][user].replies ? "" : "&filter=posts_no_replies";
 
-                    const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}&filter=posts_no_replies`);
+                    replies = Object.keys(props[channel][user]).includes('replies') ? props[channel][user].replies : false;
+                    embedProvider = Object.keys(props[channel][user]).includes('embedProvider') ? props[channel][user].embedProvider : "bsky.app";
+
+                    props[channel][user].replies = replies;
+                    props[channel][user].embedProvider = embedProvider;
+
+                    const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
                     for (const element of posts.data.feed)
                     {
                         if (element.post.author.handle == user)
@@ -105,13 +118,17 @@ export default class Ready extends Event {
                             if (props[channel][user].indexedAt < postTime)
                             {
                                 props[channel][user].indexedAt = postTime;
-                                (this.client.channels.cache.get(channel) as TextChannel).send(`${message}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}`);
-                                SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
+                                (this.client.channels.cache.get(channel) as TextChannel).send(`${message}\nhttps://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
                             }
                         }
                     }
+                    
+                    await sleep(100);
                 }
             }
-        });
+        }
+
+        this.StartScanning();
     }
 }

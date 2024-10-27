@@ -17,7 +17,7 @@ export default class GuildCreat extends Event {
         const owner = await guild.fetchOwner();
         owner?.send({ embeds: [new EmbedBuilder()
             .setColor("Green")
-            .setDescription("✅ Bluecord has been successfully added to your server!")
+            .setDescription("✅ Skycord has been successfully added to your server!")
         ]})
         .catch();
     }

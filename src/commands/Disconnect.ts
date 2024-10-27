@@ -31,7 +31,6 @@ export default class Disconnect extends Command {
 
         console.log(`[LOG // STATUS] Unsubscribing to ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
 
-        // If our guild isn't registered, register it
         if (!await SubscriberConfig.exists({ guildID: interaction.guildId }))
         {
             console.log(`[LOG // WARN] Cannot delete subscription in unregistered guild: ${interaction.guildId}`);

@@ -29,6 +29,26 @@ export default class Connect extends Command {
                     required: true,
                     type: ApplicationCommandOptionType.String,
                     choices: []
+                },
+                {
+                    name: "provider",
+                    description: "The embed provider you wish to use",
+                    required: true,
+                    type: ApplicationCommandOptionType.String,
+                    choices: [
+                        { name: "BlueSky Vanilla (bsky.app)", value: "bsky.app" },
+                        { name: "FX Bsky (fxbsky.app)", value: "fxbsky.app" }
+                    ]
+                },
+                {
+                    name: "replies",
+                    description: "Weather to announce replies or not",
+                    required: true,
+                    type: ApplicationCommandOptionType.Boolean,
+                    choices: [
+                        { name: "True", content: true },
+                        { name: "False", content: false }
+                    ]
                 }
             ],
             dev: false
@@ -37,11 +57,14 @@ export default class Connect extends Command {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         const username = interaction.options.getString("username");
-        const profile = `https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`;
+        const provider = interaction.options.getString("provider");
+        const replies = interaction.options.getBoolean("replies");
+
+        const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 
         // Get latest post
         try {
-            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}&filter=posts_no_replies`);
+            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}${filterReplies}`);
 
             var indexedAt;
 
@@ -61,83 +84,89 @@ export default class Connect extends Command {
                 }
             }
             
-            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, interaction.options.getString("message")!, indexedAt);
+            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, interaction.options.getString("message")!, indexedAt, provider!, replies!);
 
             // If our guild isn't registered, register it
             if (!await SubscriberConfig.exists({ guildID: sub.guild }))
             {
                 console.log(`[LOG // STATUS] Subscribing to ${sub.username} in guild: ${sub.guild}...`);
-                await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`[LOG // SUCCESS] Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel}`)})
+                await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`[LOG // SUCCESS] Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel} with replies: ${replies} and embed provider: ${provider}`)})
             }
             else
             {
-                SubscriberConfig.find({ guildID: sub.guild }).then((db) => {
-                    var mongo = JSON.parse(db[0].props);
+                const db = await SubscriberConfig.find({ guildID: sub.guild });
+                var mongo = JSON.parse(db[0].props);
 
-                    var channelPresent: boolean = false;
-                    // Check if our channel is present
-                    for (var channel in mongo)
+                var channelPresent: boolean = false;
+                // Check if our channel is present
+                for (var channel in mongo)
+                {
+                    // If we find ours
+                    if (channel == sub.channel)
                     {
-                        // If we find ours
-                        if (channel == sub.channel)
+                        channelPresent = true;
+                        
+                        var subPresent: boolean = false;
+                        // Check if our sub is present
+                        for (var user in mongo[channel])
                         {
-                            channelPresent = true;
-                            
-                            var subPresent: boolean = false;
-                            // Check if our sub is present
-                            for (var user in mongo[channel])
+                            if (user == sub.username)
                             {
-                                if (user == sub.username)
-                                {
-                                    subPresent = true;
-                                    // If our message is not the same, CHANGE IT
-                                    if (mongo[channel][user].message != sub.message)
-                                    {
-                                        mongo[channel][user].message = sub.message;
-                                    }
+                                subPresent = true;
 
-                                    // Stop checking (duh)
-                                    break;
+                                // Update the sub (we're pushing anyways)
+                                mongo[channel][user] = {
+                                    message: sub.message,
+                                    indexedAt: mongo[channel][user].indexedAt,
+                                    embedProvider: sub.embedProvider,
+                                    replies: sub.replies
                                 }
-                            }
 
-                            if (!subPresent)
-                            {
-                                // Add it to the channel
-                                mongo[channel] = {
-                                    ...mongo[channel],
-                                    [sub.username]:
-                                    {
-                                        message: sub.message,
-                                        indexedAt: sub.indexedAt
-                                    }
-                                }
+                                // Stop checking (duh)
+                                break;
                             }
-
-                            // Don't check any more
-                            break;
                         }
-                    }
 
-                    if (!channelPresent)
-                    {
-                        // Register a subscriber to the channel
-                        mongo = {
-                            ...mongo,
-                            [sub.channel]:
-                            {
+                        if (!subPresent)
+                        {
+                            // Add it to the channel
+                            mongo[channel] = {
+                                ...mongo[channel],
                                 [sub.username]:
                                 {
                                     message: sub.message,
-                                    indexedAt: sub.indexedAt
+                                    indexedAt: sub.indexedAt,
+                                    embedProvider: sub.embedProvider,
+                                    replies: sub.replies
                                 }
                             }
                         }
-                    }
 
-                    // Update the database
-                    SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
-                });
+                        // Don't check any more
+                        break;
+                    }
+                }
+
+                if (!channelPresent)
+                {
+                    // Register a subscriber to the channel
+                    mongo = {
+                        ...mongo,
+                        [sub.channel]:
+                        {
+                            [sub.username]:
+                            {
+                                message: sub.message,
+                                indexedAt: sub.indexedAt,
+                                embedProvider: sub.embedProvider,
+                                replies: sub.replies
+                            }
+                        }
+                    }
+                }
+
+                // Update the database
+                SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
             }
 
             interaction.reply({ embeds: [new EmbedBuilder()

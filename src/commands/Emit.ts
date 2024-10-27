@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, ChatInputCommandInteraction, EmbedBuilder, Events, Guild, PermissionFlagsBits, PermissionsBitField } from "discord.js";
+import { ApplicationCommandOptionType, ChatInputCommandInteraction, EmbedBuilder, Events, Guild, PermissionsBitField } from "discord.js";
 import Command from "../base/classes/Command";
 import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";

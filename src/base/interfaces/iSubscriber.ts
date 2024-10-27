@@ -4,6 +4,8 @@ export default interface ISubscriber {
     username: string;
     message: string;
     indexedAt: number;
+    embedProvider: string;
+    replies: boolean;
 
     toJSON(): object[];
 }
