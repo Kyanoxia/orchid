@@ -3,6 +3,7 @@ export default interface ISubscriber {
     channel: string;
     username: string;
     message: string;
+    indexedAt: number;
 
     toJSON(): object[];
 }

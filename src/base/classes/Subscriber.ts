@@ -1,4 +1,3 @@
-import { ChatInputCommandInteraction, AutocompleteInteraction } from "discord.js";
 import ISubscriber from "../interfaces/iSubscriber";
 
 export default class Subscriber implements ISubscriber {
@@ -6,12 +5,14 @@ export default class Subscriber implements ISubscriber {
     channel: string;
     username: string;
     message: string;
+    indexedAt: number;
 
-    constructor(guild: string, channel: string, username: string, message: string) {
+    constructor(guild: string, channel: string, username: string, message: string, indexedAt: number) {
         this.guild = guild;
         this.channel = channel;
         this.username = username;
         this.message = message;
+        this.indexedAt = indexedAt;
     }
 
     Init(): void {
@@ -31,7 +32,8 @@ export default class Subscriber implements ISubscriber {
             {
                 [username]:
                 {
-                    message: message
+                    message: message,
+                    indexedAt: this.indexedAt
                 }
             }
         }

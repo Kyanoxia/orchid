@@ -1,10 +1,10 @@
-import { ActivityType, Collection, Events, Integration, REST, Routes } from "discord.js";
-import { Agent } from '@atproto/api'
-import { OAuthClient } from '@atproto/oauth-client'
+import { ActivityType, Collection, Events, TextChannel, REST, Routes } from "discord.js";
 import CustomClient from "../../base/classes/CustomClient";
 import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";
 import { configDotenv } from "dotenv";
+import SubscriberConfig from "../../base/schemas/SubscriberConfig";
+import axios from "axios";
 
 export default class Ready extends Event {
     constructor(client: CustomClient)
@@ -40,10 +40,14 @@ export default class Ready extends Event {
 
         this.client.user?.setPresence({
             activities: [{
-                name: 'with my cock',
-                type: ActivityType.Playing,
+                name: `${this.client.guilds.cache.size} guilds...`,
+                type: ActivityType.Watching,
             }]
         })
+
+        setInterval(() => {
+            this.StartScanning();
+        }, 10000);
     }
 
     private GetJson(commands: Collection<string, Command>): object[] {
@@ -62,5 +66,52 @@ export default class Ready extends Event {
         });
 
         return data;
+    }
+
+    private async StartScanning() {
+        const db = await SubscriberConfig.find({});
+        db.forEach(async (element) => {
+            const props = JSON.parse(element.props);
+            const guild = element.guildID;
+
+            const guilds = Array.from(this.client.guilds.cache.map(guild => guild.id));
+
+            var postTime: string;
+
+            // Delete document if we aren't in the guild anymore
+            if (!guilds.includes(guild))
+            {
+                console.log(`[LOG // STATUS] No longer in guild ${guild}. Deleting document...`)
+                SubscriberConfig.deleteMany({ guildID: guild }).catch();
+                return;
+            }
+
+            for (var channel in props)
+            {
+                for (var user in props[channel])
+                {
+                    const message = props[channel][user].message;
+
+                    const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}&filter=posts_no_replies`);
+                    for (const element of posts.data.feed)
+                    {
+                        if (element.post.author.handle == user)
+                        {
+                            const post = element.post;
+                            const postHead = post.uri.split("post/").pop();
+
+                            postTime = post.indexedAt.replace(/[^0-9]/g, '');
+
+                            if (props[channel][user].indexedAt < postTime)
+                            {
+                                props[channel][user].indexedAt = postTime;
+                                (this.client.channels.cache.get(channel) as TextChannel).send(`${message}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}`);
+                                SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
+                            }
+                        }
+                    }
+                }
+            }
+        });
     }
 }

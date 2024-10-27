@@ -4,6 +4,7 @@ import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
 import Subscriber from "../base/classes/Subscriber";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
+import axios from "axios";
 
 export default class Connect extends Command {
     constructor(client: CustomClient) {
@@ -35,94 +36,120 @@ export default class Connect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        const sub = new Subscriber(interaction.guildId!, interaction.channelId, interaction.options.getString("username")!, interaction.options.getString("message")!);
+        const username = interaction.options.getString("username");
+        const profile = `https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`;
 
-        // If our guild isn't registered, register it
-        if (!await SubscriberConfig.exists({ guildID: sub.guild }))
-        {
-            console.log(`[LOG // STATUS] Subscribing to ${sub.username} in guild: ${sub.guild}...`);
-            await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`[LOG // SUCCESS] Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel}`)})
-        }
-        else
-        {
-            SubscriberConfig.find({ guildID: sub.guild }).then((db) => {
-                var mongo = JSON.parse(db[0].props);
+        // Get latest post
+        try {
+            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}&filter=posts_no_replies`);
 
-                var channelPresent: boolean = false;
-                // Check if our channel is present
-                for (var channel in mongo)
+            var indexedAt;
+
+            for (const element of posts.data.feed)
+            {
+                if (element.post.author.handle == username)
                 {
-                    // If we find ours
-                    if (channel == sub.channel)
+                    const post = element.post;
+
+                    indexedAt = post.indexedAt.replace(/[^0-9]/g, '');
+
+                    break;
+                }
+                else
+                {
+                    indexedAt = 0;
+                }
+            }
+            
+            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, interaction.options.getString("message")!, indexedAt);
+
+            // If our guild isn't registered, register it
+            if (!await SubscriberConfig.exists({ guildID: sub.guild }))
+            {
+                console.log(`[LOG // STATUS] Subscribing to ${sub.username} in guild: ${sub.guild}...`);
+                await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`[LOG // SUCCESS] Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel}`)})
+            }
+            else
+            {
+                SubscriberConfig.find({ guildID: sub.guild }).then((db) => {
+                    var mongo = JSON.parse(db[0].props);
+
+                    var channelPresent: boolean = false;
+                    // Check if our channel is present
+                    for (var channel in mongo)
                     {
-                        channelPresent = true;
-                        
-                        var subPresent: boolean = false;
-                        // Check if our sub is present
-                        for (var user in mongo[channel])
+                        // If we find ours
+                        if (channel == sub.channel)
                         {
-                            if (user == sub.username)
+                            channelPresent = true;
+                            
+                            var subPresent: boolean = false;
+                            // Check if our sub is present
+                            for (var user in mongo[channel])
                             {
-                                subPresent = true;
-                                // If our message is not the same, CHANGE IT
-                                if (mongo[channel][user].message != sub.message)
+                                if (user == sub.username)
                                 {
-                                    mongo[channel][user].message = sub.message;
-                                    console.log(mongo[channel][user].message);
+                                    subPresent = true;
+                                    // If our message is not the same, CHANGE IT
+                                    if (mongo[channel][user].message != sub.message)
+                                    {
+                                        mongo[channel][user].message = sub.message;
+                                    }
+
+                                    // Stop checking (duh)
+                                    break;
                                 }
-
-                                // Stop checking (duh)
-                                //break;
                             }
-                        }
 
-                        if (!subPresent)
-                        {
-                            // Add it to the channel
-                            mongo[channel] = {
-                                ...mongo[channel],
+                            if (!subPresent)
+                            {
+                                // Add it to the channel
+                                mongo[channel] = {
+                                    ...mongo[channel],
+                                    [sub.username]:
+                                    {
+                                        message: sub.message,
+                                        indexedAt: sub.indexedAt
+                                    }
+                                }
+                            }
+
+                            // Don't check any more
+                            break;
+                        }
+                    }
+
+                    if (!channelPresent)
+                    {
+                        // Register a subscriber to the channel
+                        mongo = {
+                            ...mongo,
+                            [sub.channel]:
+                            {
                                 [sub.username]:
                                 {
-                                    message: sub.message
+                                    message: sub.message,
+                                    indexedAt: sub.indexedAt
                                 }
                             }
                         }
-
-                        // Don't check any more
-                        //break;
                     }
-                }
 
-                if (!channelPresent)
-                {
-                    // Register a subscriber to the channel
-                    mongo = {
-                        ...mongo,
-                        [sub.channel]:
-                        {
-                            [sub.username]:
-                            {
-                                message: sub.message
-                            }
-                        }
-                    }
-                }
+                    // Update the database
+                    SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
+                });
+            }
 
-                console.log(mongo);
-
-                // Update the database
-                SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
-
-                //feed.items.forEach(item => {
-                //    console.log(item.title + ':' + item.link) // item will have a `bar` property type as a number
-                //});
+            interaction.reply({ embeds: [new EmbedBuilder()
+                .setColor("Green")
+                .setDescription(`✅ Subscribed to user ${interaction.options.getString("username")} in channel <#${interaction.channelId}>`)
+            ]
             });
+        } catch (err) {
+            interaction.reply({embeds: [new EmbedBuilder()
+                .setColor("Red")
+                .setDescription(`❌ Uh oh! It looks like we didn't receive a response for that request.  Please make sure you spelled the user's handle correctly!`)
+            ]})
         }
-
-        interaction.reply({ embeds: [new EmbedBuilder()
-            .setColor("Green")
-            .setDescription(`✅ Subscribed to user ${interaction.options.getString("username")} in channel <#${interaction.channelId}>`)
-        ]
-        });
     }
 }

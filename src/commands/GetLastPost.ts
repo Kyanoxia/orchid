@@ -28,27 +28,24 @@ export default class GetLastPost extends Command {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         const username = interaction.options.getString("username");
-        const profile = `https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`;
 
-        axios.get(profile).then((res) => {
-            axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${res.data.did}&filter=posts_no_replies`).then((posts) => {
-                for (const element of posts.data.feed)
+        axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}&filter=posts_no_replies`).then((posts) => {
+            for (const element of posts.data.feed)
+            {
+                if (element.post.author.handle == username)
                 {
-                    if (element.post.author.handle == username)
-                    {
-                        const post = element.post;
-                        const postHead = post.uri.split("post/").pop();
+                    const post = element.post;
+                    const postHead = post.uri.split("post/").pop();
 
-                        interaction.reply({ content: `Most recent post from user: ${username}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}`, ephemeral: false });
+                    interaction.reply({ content: `Most recent post from user: ${username}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}`, ephemeral: false });
 
-                        break;
-                    }
+                    break;
                 }
-            });
+            }
         })
-            .catch((err) => {
-                console.error("[LOG // ERROR] Invalid response! Server responded with status: ", err.status);
-                interaction.reply({ content: "Unable to fetch data.  Please check console.", ephemeral: true })
+        .catch((err) => {
+            console.error("[LOG // ERROR] Invalid response! Server responded with status: ", err.status);
+            interaction.reply({ content: "Unable to fetch data.  Please check console.", ephemeral: true })
         });
     }
 }

@@ -73,16 +73,15 @@ export default class Disconnect extends Command {
                     }
                 }
 
-                console.log(mongo);
-                console.log(Object.keys(mongo).length);
-
                 // Update the database (delete entry if empty)
                 if (Object.keys(mongo).length == 0)
                 {
+                    console.log(`[LOG // STATUS] No more subscriptions found in ${interaction.guildId}. Deleting document...`);
                     SubscriberConfig.deleteMany({ guildID: interaction.guildId }).catch();
                 }
                 else
                 {
+                    console.log(`[LOG // STATUS] Updating information for ${interaction.guildId}`);
                     SubscriberConfig.updateOne({ guildID: interaction.guildId }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
                 }
 
