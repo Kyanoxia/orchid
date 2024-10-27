@@ -96,7 +96,7 @@ export default class Ready extends Event {
             {
                 for (const user in props[channel])
                 {
-                    const message = props[channel][user].message;
+                    var message = props[channel][user].message;
                     const filterReplies: string = props[channel][user].replies ? "" : "&filter=posts_no_replies";
 
                     replies = Object.keys(props[channel][user]).includes('replies') ? props[channel][user].replies : false;
@@ -104,6 +104,11 @@ export default class Ready extends Event {
 
                     props[channel][user].replies = replies;
                     props[channel][user].embedProvider = embedProvider;
+
+                    if (message != "")
+                    {
+                        message = message + "\n";
+                    }
 
                     const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
                     for (const element of posts.data.feed)
@@ -118,7 +123,7 @@ export default class Ready extends Event {
                             if (props[channel][user].indexedAt < postTime)
                             {
                                 props[channel][user].indexedAt = postTime;
-                                (this.client.channels.cache.get(channel) as TextChannel).send(`${message}\nhttps://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                (this.client.channels.cache.get(channel) as TextChannel).send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
                                 await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
                             }
                         }

@@ -24,13 +24,6 @@ export default class Connect extends Command {
                     choices: []
                 },
                 {
-                    name: "message",
-                    description: "The message to preface announcements with",
-                    required: true,
-                    type: ApplicationCommandOptionType.String,
-                    choices: []
-                },
-                {
                     name: "provider",
                     description: "The embed provider you wish to use",
                     required: true,
@@ -49,6 +42,13 @@ export default class Connect extends Command {
                         { name: "True", content: true },
                         { name: "False", content: false }
                     ]
+                },
+                {
+                    name: "message",
+                    description: "The message to preface announcements with",
+                    required: false,
+                    type: ApplicationCommandOptionType.String,
+                    choices: []
                 }
             ],
             dev: false
@@ -59,6 +59,12 @@ export default class Connect extends Command {
         const username = interaction.options.getString("username");
         const provider = interaction.options.getString("provider");
         const replies = interaction.options.getBoolean("replies");
+        var message = interaction.options.getString("message");
+
+        if (!message)
+        {
+            message = "";
+        }
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 
@@ -84,7 +90,7 @@ export default class Connect extends Command {
                 }
             }
             
-            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, interaction.options.getString("message")!, indexedAt, provider!, replies!);
+            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, message!, indexedAt, provider!, replies!);
 
             // If our guild isn't registered, register it
             if (!await SubscriberConfig.exists({ guildID: sub.guild }))
