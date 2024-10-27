@@ -1,4 +1,6 @@
 .env
+*.tsbuildinfo
 build/
 node_modules/
+**/*.tsbuildinfo
 tsconfig.tsbuildinfo

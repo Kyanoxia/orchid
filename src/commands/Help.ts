@@ -25,16 +25,14 @@ export default class Help extends Command {
                 .setThumbnail(this.client.user?.displayAvatarURL()!)
                 .setColor("#8AC3FF")
                 .setDescription(`
-                        <:bsky:1299097267751485460> __**BOT INFO**__
-                        > **User:** \`${this.client.user?.tag}\` - \`${this.client.user?.id}\`
-                        > **Guilds:** \`${this.client.guilds.cache.size}\`
-                        > **Account Created:** <t:${(this.client.user!.createdTimestamp / 1000).toFixed(0)}:R>
-                        > **Commands Registered:** \`${this.client.commands.size}\`
-                        > **Version:** \`${version}\`
-                        > **NodeJS Version:** \`${process.version}\`
-                        > **Dependencies Registered:** \`${Object.keys(dependencies).length}\`
-                        > **Dependencies:** \`${Object.keys(dependencies).map((p) => (`${p}-V${dependencies[p]}`).replace(/\^/g, "")).join(", ")}\`
-                        > **Uptime:** \`${ms(this.client.uptime!, { long: false })}\``)
+                        > **\`/help\`** Display the help dialogue
+                        > **\`/connect\`** Connect a user account
+                        > **\`/disconnect\`** Disconnect a user account
+                        > **\`/getlastpost\`** Get last post of a user account (excluding reposts and replies)
+                        > **\`/botinfo\`** Display information about Skycord`)
+                .setFooter({ text: "For more information, please visit the bot's README", iconURL: this.client.user?.displayAvatarURL() })
+                .setURL("https://github.com/Kyanoxia/skycord?tab=readme-ov-file#commands")
+                .setTitle("Bot Help")
         ] });
     }
 }
