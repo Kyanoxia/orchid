@@ -20,13 +20,11 @@ export default class GetDatabase extends Command {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         var message: string = "";
-
-        const db = await SubscriberConfig.find({ guildID: interaction.guildId })
+        const db = await SubscriberConfig.find({ guildID: interaction.guildId });
         for (const element in db)
         {
             const props = JSON.parse(db[element].props);
             const channel = interaction.channelId;
-
             var sub: string = "- ";
 
             for (const user in props[channel])
@@ -35,7 +33,12 @@ export default class GetDatabase extends Command {
             }
         }
 
-        interaction.reply({
+        if (message == "")
+        {
+            message = "Not subscribed to anybody yet!";
+        }
+
+        await interaction.reply({
             embeds: [new EmbedBuilder()
                 .setThumbnail(this.client.user?.displayAvatarURL()!)
                 .setColor("#5AB8FE")

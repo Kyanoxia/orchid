@@ -34,7 +34,7 @@ export default class Disconnect extends Command {
         if (!await SubscriberConfig.exists({ guildID: interaction.guildId }))
         {
             console.log(`[LOG // WARN] Cannot delete subscription in unregistered guild: ${interaction.guildId}`);
-            interaction.reply({ embeds: [new EmbedBuilder()
+            await interaction.reply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(`❌ Can not delete subscription in unregistered guild!`)
             ]
@@ -42,56 +42,65 @@ export default class Disconnect extends Command {
         }
         else
         {
-            SubscriberConfig.find({ guildID: interaction.guildId }).then((db) => {
-                var mongo = JSON.parse(db[0].props);
+            const db = await SubscriberConfig.find({ guildID: interaction.guildId });
+            var mongo = JSON.parse(db[0].props);
 
-                // Check if our subscription is present
-                for (var channel in mongo)
+            // Check if our subscription is present
+            for (var channel in mongo)
+            {
+                for (var user in mongo[channel])
                 {
-                    for (var user in mongo[channel])
+                    // Delete the subscription if we have it
+                    if (Object.keys(mongo[channel]).includes(`${username}`))
                     {
-                        // Delete the subscription if we have it
-                        if (user == username)
-                        {
-                            delete mongo[channel][user];
-                        }
-                        else
-                        {
-                            interaction.reply({ embeds: [new EmbedBuilder()
-                                .setColor("Red")
-                                .setDescription(`❌ Can not unsubscribe from unregistered user!`)
-                            ]
-                            });
-                        }
+                        delete mongo[channel][user];
                     }
-
-                    // Delete the whole channel if it's empty
-                    if (Object.keys(mongo[channel]).length == 0)
+                    else
                     {
-                        delete mongo[channel];
+                        await interaction.reply({ embeds: [new EmbedBuilder()
+                            .setColor("Red")
+                            .setDescription("❌ Can not unsubscribe from unregistered user!")
+                        ]
+                        });
+
+                        return;
                     }
                 }
 
-                // Update the database (delete entry if empty)
-                if (Object.keys(mongo).length == 0)
+                // Delete the whole channel if it's empty
+                if (Object.keys(mongo[channel]).length == 0)
                 {
-                    console.log(`[LOG // STATUS] No more subscriptions found in ${interaction.guildId}. Deleting document...`);
-                    SubscriberConfig.deleteMany({ guildID: interaction.guildId }).catch();
+                    delete mongo[channel];
                 }
-                else
-                {
-                    console.log(`[LOG // STATUS] Updating information for ${interaction.guildId}`);
-                    SubscriberConfig.updateOne({ guildID: interaction.guildId }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
+            }
+
+            // Update the database (delete entry if empty)
+            if (Object.keys(mongo).length == 0)
+            {
+                console.log(`[LOG // STATUS] No more subscriptions found in ${interaction.guildId}. Deleting document...`);
+                try {
+                    await SubscriberConfig.deleteMany({ guildID: interaction.guildId });
+                } catch (err) {
+                    console.log(err);
                 }
+            }
+            else
+            {
+                console.log(`[LOG // STATUS] Updating information for ${interaction.guildId}`);
+                try {
+                    await SubscriberConfig.updateOne({ guildID: interaction.guildId }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
+                } catch (err) {
+                    console.log(err);
+                }
+            }
 
-                interaction.reply({ embeds: [new EmbedBuilder()
-                    .setColor("Red")
-                    .setDescription(`❌ Unsubscribed to user ${username} in channel <#${interaction.channelId}>`)
-                ]
-                });
-
-                console.log(`[LOG // SUCCESS] Unsubscribed from user ${username} in ${interaction.guildId} / ${interaction.channelId}`);
+            await interaction.reply({ embeds: [new EmbedBuilder()
+                .setColor("Red")
+                .setDescription(`❌ Unsubscribed to user ${username} in channel <#${interaction.channelId}>`)
+            ]
             });
+
+            console.log(`[LOG // SUCCESS] Unsubscribed from user ${username} in ${interaction.guildId} / ${interaction.channelId}`);
         }
     }
 }
