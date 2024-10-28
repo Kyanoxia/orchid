@@ -1,4 +1,4 @@
-import { ActivityType, Collection, Events, TextChannel, REST, Routes, EmbedBuilder } from "discord.js";
+import { ActivityType, Collection, Events, TextChannel, REST, Routes, EmbedBuilder, GuildMember } from "discord.js";
 import CustomClient from "../../base/classes/CustomClient";
 import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";
@@ -135,13 +135,23 @@ export default class Ready extends Event {
                             {
                                 props[channel][user].indexedAt = postTime;
                                 try {
-                                    (this.client.channels.cache.get(channel) as TextChannel).send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                    const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                                    if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                                    {
+                                        await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                    }
+                                    else
+                                    {
+                                        const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+                                        await owner?.send({
+                                            embeds: [new EmbedBuilder()
+                                                .setColor("Red")
+                                                .setDescription("❌ Skycord tried to send a message but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
+                                            ]
+                                        });
+                                    }
                                 } catch (err) {
-                                    const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                    owner?.send({ embeds: [new EmbedBuilder()
-                                        .setColor("Red")
-                                        .setDescription("❌ Skycord tried to send a message but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel.")
-                                    ]})
+                                    console.error(err);
                                 }
                                 await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
                             }
