@@ -56,7 +56,7 @@ export default class Connect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        interaction.deferReply();
+        await interaction.deferReply();
         const username = interaction.options.getString("username");
         const provider = interaction.options.getString("provider");
         const replies = interaction.options.getBoolean("replies");
@@ -176,13 +176,13 @@ export default class Connect extends Command {
                 SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
             }
 
-            interaction.editReply({ embeds: [new EmbedBuilder()
+            await interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor("Green")
                 .setDescription(`✅ Subscribed to user ${interaction.options.getString("username")} in channel <#${interaction.channelId}>`)
             ]
             });
         } catch (err) {
-            interaction.editReply({embeds: [new EmbedBuilder()
+            await interaction.editReply({embeds: [new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(`❌ Uh oh! It looks like we didn't receive a response for that request.  Please make sure you spelled the user's handle correctly!`)
             ]})

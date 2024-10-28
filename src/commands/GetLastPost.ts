@@ -27,7 +27,7 @@ export default class GetLastPost extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        interaction.deferReply()
+        await interaction.deferReply()
         const username = interaction.options.getString("username");
 
         try {
@@ -39,7 +39,7 @@ export default class GetLastPost extends Command {
                     const post = element.post;
                     const postHead = post.uri.split("post/").pop();
 
-                    interaction.editReply({ content: `Most recent post from user: ${username}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}` });
+                    await interaction.editReply({ content: `Most recent post from user: ${username}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}` });
 
                     break;
                 }
@@ -47,7 +47,7 @@ export default class GetLastPost extends Command {
         } catch (err) {
             console.error("[LOG // ERROR] Invalid response while getting post. Please check error logs.");
             console.error(err);
-            interaction.editReply({ content: "Unable to fetch data.  Please check console." })
+            await interaction.editReply({ content: "Unable to fetch data.  Please check console." })
         }
     }
 }

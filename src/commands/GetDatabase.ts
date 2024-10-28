@@ -18,21 +18,26 @@ export default class GetDatabase extends Command {
         });
     }
 
-    Execute(interaction: ChatInputCommandInteraction) {
-        SubscriberConfig.find({}).then((db) => {
-            db.forEach((element) => {
+    async Execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
+        try {
+            const db = await SubscriberConfig.find({})
+            for (const element in db)
+            {
                 console.log(element);
-            });
-        });
+            }
 
-        this.client.guilds.cache.forEach(guild => {
-            const channels = guild?.channels ? JSON.parse(
-                JSON.stringify(guild.channels)
-            ).guild.channels : [];
+            this.client.guilds.cache.forEach(guild => {
+                const channels = guild?.channels ? JSON.parse(
+                    JSON.stringify(guild.channels)
+                ).guild.channels : [];
+    
+                console.log(guild.id, channels);
+            })
+        } catch (err) {
+            console.error(err);
+        }
 
-            console.log(guild.id, channels);
-        })
-
-        interaction.reply({ content: "Please check your developer console...", ephemeral: true })
+        await interaction.editReply({ content: "Please check your developer console..." })
     }
 }

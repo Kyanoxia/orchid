@@ -19,9 +19,9 @@ export default class BotInfo extends Command {
         });
     }
 
-    Execute(interaction: ChatInputCommandInteraction) {
-        interaction.deferReply();
-        interaction.editReply({
+    async Execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
+        await interaction.editReply({
             embeds: [new EmbedBuilder()
                 .setThumbnail(this.client.user?.displayAvatarURL()!)
                 .setColor("#8AC3FF")

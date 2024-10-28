@@ -28,16 +28,17 @@ export default class Emit extends Command {
         });
     }
 
-    Execute(interaction: ChatInputCommandInteraction) {
+    async Execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
         const event = interaction.options.getString("event");
 
         if (event == Events.GuildCreate || event == Events.GuildDelete) {
             this.client.emit(event, interaction.guild as Guild);
         }
 
-        interaction.reply({ embeds: [new EmbedBuilder()
+        await interaction.editReply({ embeds: [new EmbedBuilder()
             .setColor("Green")
             .setDescription(`Emitted Event: \`${event}\``)
-        ], ephemeral: false })
+        ]})
     }
 }
