@@ -40,14 +40,8 @@ export default class Ready extends Event {
             console.log(`[LOG // SUCCESS] Successfully set ${devCommands.length} Developer Application (/) Commands`)
         }
 
-        this.client.user?.setPresence({
-            activities: [{
-                name: `${this.client.guilds.cache.size} guilds...`,
-                type: ActivityType.Watching,
-            }]
-        })
-
-        await this.StartScanning();
+        this.StatusLoop();
+        this.StartScanning();
     }
 
     private GetJson(commands: Collection<string, Command>): object[] {
@@ -66,7 +60,24 @@ export default class Ready extends Event {
         });
 
         return data;
-    }    
+    }
+
+    private async StatusLoop() {
+        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+        this.client.user?.setPresence({
+            activities: [{
+                name: `${this.client.guilds.cache.size} guilds...`,
+                type: ActivityType.Watching,
+            }]
+        })
+
+        console.log(`[LOG // STATUS] Set new status to: Watching ${this.client.guilds.cache.size} guilds...`);
+
+        await sleep(60000);
+
+        this.StatusLoop();
+    }
 
     private async StartScanning() {
         const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
