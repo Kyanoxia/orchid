@@ -4,7 +4,7 @@
   "description": "Bluesky Discord bot",
   "main": "index.js",
   "scripts": {
-    "clean": "del /s /q build",
+    "clean": "rm -rf build",
     "build": "tsc --build",
     "start": "npm run clean && npm run build && node build/index.js",
     "startpm": "npm run clean && npm run build && pm2 start build/index.js",
