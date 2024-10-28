@@ -27,6 +27,7 @@ export default class Disconnect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
         const username = interaction.options.getString("username");
 
         console.log(`[LOG // STATUS] Unsubscribing to ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
@@ -57,7 +58,7 @@ export default class Disconnect extends Command {
                     }
                     else
                     {
-                        await interaction.reply({ embeds: [new EmbedBuilder()
+                        await interaction.editReply({ embeds: [new EmbedBuilder()
                             .setColor("Red")
                             .setDescription("❌ Can not unsubscribe from unregistered user!")
                         ]
@@ -94,7 +95,7 @@ export default class Disconnect extends Command {
                 }
             }
 
-            await interaction.reply({ embeds: [new EmbedBuilder()
+            await interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(`❌ Unsubscribed to user ${username} in channel <#${interaction.channelId}>`)
             ]

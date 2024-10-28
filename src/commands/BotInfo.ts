@@ -20,7 +20,8 @@ export default class BotInfo extends Command {
     }
 
     Execute(interaction: ChatInputCommandInteraction) {
-        interaction.reply({
+        interaction.deferReply();
+        interaction.editReply({
             embeds: [new EmbedBuilder()
                 .setThumbnail(this.client.user?.displayAvatarURL()!)
                 .setColor("#8AC3FF")

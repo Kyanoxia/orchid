@@ -27,9 +27,11 @@ export default class GetLastPost extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
+        interaction.deferReply()
         const username = interaction.options.getString("username");
 
-        axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}&filter=posts_no_replies`).then((posts) => {
+        try {
+            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}&filter=posts_no_replies`);
             for (const element of posts.data.feed)
             {
                 if (element.post.author.handle == username)
@@ -37,15 +39,15 @@ export default class GetLastPost extends Command {
                     const post = element.post;
                     const postHead = post.uri.split("post/").pop();
 
-                    interaction.reply({ content: `Most recent post from user: ${username}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}`, ephemeral: false });
+                    interaction.editReply({ content: `Most recent post from user: ${username}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}` });
 
                     break;
                 }
             }
-        })
-        .catch((err) => {
-            console.error("[LOG // ERROR] Invalid response! Server responded with status: ", err.status);
-            interaction.reply({ content: "Unable to fetch data.  Please check console.", ephemeral: true })
-        });
+        } catch (err) {
+            console.error("[LOG // ERROR] Invalid response while getting post. Please check error logs.");
+            console.error(err);
+            interaction.editReply({ content: "Unable to fetch data.  Please check console." })
+        }
     }
 }

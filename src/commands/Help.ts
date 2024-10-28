@@ -17,8 +17,9 @@ export default class Help extends Command {
         });
     }
 
-    Execute(interaction: ChatInputCommandInteraction) {
-        interaction.reply({
+    async Execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
+        await interaction.editReply({
             embeds: [new EmbedBuilder()
                 .setThumbnail(this.client.user?.displayAvatarURL()!)
                 .setColor("#8AC3FF")
@@ -26,7 +27,7 @@ export default class Help extends Command {
                         > **\`/help\`** Display the help dialogue
                         > **\`/connect\`** Connect a user account
                         > **\`/disconnect\`** Disconnect a user account
-                        > **\`/list\` List all connected accounts in a given channel
+                        > **\`/list\`** List all connected accounts in a given channel
                         > **\`/getlastpost\`** Get last post of a user account (excluding reposts and replies)
                         > **\`/botinfo\`** Display information about Skycord`)
                 .setFooter({ text: "For more information, please visit the bot's README (available through the embed link)", iconURL: this.client.user?.displayAvatarURL() })

@@ -18,6 +18,7 @@ export default class GuildCreat extends Event {
         owner?.send({ embeds: [new EmbedBuilder()
             .setColor("Green")
             .setDescription("✅ Skycord has been successfully added to your server!")
+            .setFooter({ text: "For the time being, Skycord can __NOT__ announce posts in NSFW channels", iconURL: this.client.user?.displayAvatarURL() })
         ]})
         .catch();
     }

@@ -19,6 +19,8 @@ export default class GetDatabase extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
+        await interaction.deferReply();
+
         var message: string = "";
         const db = await SubscriberConfig.find({ guildID: interaction.guildId });
         for (const element in db)
@@ -38,7 +40,7 @@ export default class GetDatabase extends Command {
             message = "Not subscribed to anybody yet!";
         }
 
-        await interaction.reply({
+        await interaction.editReply({
             embeds: [new EmbedBuilder()
                 .setThumbnail(this.client.user?.displayAvatarURL()!)
                 .setColor("#5AB8FE")
