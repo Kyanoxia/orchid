@@ -83,7 +83,9 @@ export default class Ready extends Event {
         const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
         try {
+            console.log(`[LOG // DEBUG] Getting Mongo Database...`);
             const db = await SubscriberConfig.find({});
+            console.log(`[LOG // DEBUG] Got Mongo Database...`);
         
             for (const i in db)
             {
@@ -99,11 +101,18 @@ export default class Ready extends Event {
                 // Delete document if we aren't in the guild anymore
                 if (!guilds.includes(guild))
                 {
-                    console.log(`[LOG // STATUS] No longer in guild ${guild}. Deleting document...`)
-                    await SubscriberConfig.deleteMany({ guildID: guild }).catch();
+                    console.log(`[LOG // STATUS] No longer in guild ${guild}. Deleting document...`);
+                    try {
+                        console.log(`[LOG // DEBUG] Deleting Guild Entry: ${guild}...`);
+                        await SubscriberConfig.deleteMany({ guildID: guild });
+                        console.log(`[LOG // DEBUG] Deleted Guild Entry: ${guild}`);
+                    } catch (err) {
+                        console.error(err);
+                    }
                     continue;
                 }
 
+                console.log(`[LOG // DEBUG] Looping through Local Mongo DB`);
                 for (const channel in props)
                 {
                     for (const user in props[channel])
@@ -123,7 +132,9 @@ export default class Ready extends Event {
                         }
 
                         try {
+                            console.log(`[LOG // DEBUG] Sending request for ${user}...`);
                             const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
+                            console.log(`[LOG // DEBUG] Got response from ${user}...`);
                             for (const element of posts.data.feed)
                             {
                                 if (element.post.author.handle == user)
@@ -131,7 +142,7 @@ export default class Ready extends Event {
                                     const post = element.post;
                                     const postHead = post.uri.split("post/").pop();
 
-                                    console.log(`[LOG // STATUS] Just got recent post from: ${element.post.author.handle}`);
+                                    console.log(`[LOG // DEBUG] Just got recent post from: ${element.post.author.handle}`);
 
                                     postTime = post.indexedAt.replace(/[^0-9]/g, '');
 
@@ -142,7 +153,9 @@ export default class Ready extends Event {
                                             const gChannel = this.client.channels.cache.get(channel) as TextChannel;
                                             if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
                                             {
+                                                console.log(`[LOG // DEBUG] Sending announcement message for ${user}...`);
                                                 await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                                console.log(`[LOG // DEBUG] Sent announcement message for ${user}...`);
                                             }
                                             else
                                             {
@@ -159,7 +172,9 @@ export default class Ready extends Event {
                                         }
 
                                         try {
+                                            console.log(`[LOG // DEBUG] Updating database for ${guild}...`);
                                             await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
+                                            console.log(`[LOG // DEBUG] Updated Database for ${guild}`);
                                         } catch (err) {
                                             console.error(err);
                                         }
@@ -181,6 +196,7 @@ export default class Ready extends Event {
             console.error(err);
         }
 
+        console.log(`[LOG // DEBUG] Calling new loop...`);
         this.StartScanning();
     }
 }
