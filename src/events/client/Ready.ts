@@ -82,93 +82,97 @@ export default class Ready extends Event {
     private async StartScanning() {
         const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
-        const db = await SubscriberConfig.find({});
+        try {
+            const db = await SubscriberConfig.find({});
         
-        for (const i in db)
-        {
-            const props = JSON.parse(db[i].props);
-            const guild = db[i].guildID;
-
-            const guilds = Array.from(this.client.guilds.cache.map(guild => guild.id));
-
-            var postTime: string;
-            var embedProvider: string;
-            var replies: boolean;
-
-            // Delete document if we aren't in the guild anymore
-            if (!guilds.includes(guild))
+            for (const i in db)
             {
-                console.log(`[LOG // STATUS] No longer in guild ${guild}. Deleting document...`)
-                await SubscriberConfig.deleteMany({ guildID: guild }).catch();
-                return;
-            }
+                const props = JSON.parse(db[i].props);
+                const guild = db[i].guildID;
 
-            for (const channel in props)
-            {
-                for (const user in props[channel])
+                const guilds = Array.from(this.client.guilds.cache.map(guild => guild.id));
+
+                var postTime: string;
+                var embedProvider: string;
+                var replies: boolean;
+
+                // Delete document if we aren't in the guild anymore
+                if (!guilds.includes(guild))
                 {
-                    var message = props[channel][user].message;
-                    const filterReplies: string = props[channel][user].replies ? "" : "&filter=posts_no_replies";
+                    console.log(`[LOG // STATUS] No longer in guild ${guild}. Deleting document...`)
+                    await SubscriberConfig.deleteMany({ guildID: guild }).catch();
+                    return;
+                }
 
-                    replies = Object.keys(props[channel][user]).includes('replies') ? props[channel][user].replies : false;
-                    embedProvider = Object.keys(props[channel][user]).includes('embedProvider') ? props[channel][user].embedProvider : "bsky.app";
-
-                    props[channel][user].replies = replies;
-                    props[channel][user].embedProvider = embedProvider;
-
-                    if (message != "")
+                for (const channel in props)
+                {
+                    for (const user in props[channel])
                     {
-                        message = message + "\n";
-                    }
+                        var message = props[channel][user].message;
+                        const filterReplies: string = props[channel][user].replies ? "" : "&filter=posts_no_replies";
 
-                    try {
-                        const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
-                        for (const element of posts.data.feed)
+                        replies = Object.keys(props[channel][user]).includes('replies') ? props[channel][user].replies : false;
+                        embedProvider = Object.keys(props[channel][user]).includes('embedProvider') ? props[channel][user].embedProvider : "bsky.app";
+
+                        props[channel][user].replies = replies;
+                        props[channel][user].embedProvider = embedProvider;
+
+                        if (message != "")
                         {
-                            if (element.post.author.handle == user)
-                            {
-                                const post = element.post;
-                                const postHead = post.uri.split("post/").pop();
-
-                                console.log(`[LOG // STATUS] Just got recent post from: ${element.post.author.handle}`);
-
-                                postTime = post.indexedAt.replace(/[^0-9]/g, '');
-
-                                if (props[channel][user].indexedAt < postTime)
-                                {
-                                    props[channel][user].indexedAt = postTime;
-                                    try {
-                                        const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                                        if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
-                                        {
-                                            await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
-                                        }
-                                        else
-                                        {
-                                            const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                            await owner?.send({
-                                                embeds: [new EmbedBuilder()
-                                                    .setColor("Red")
-                                                    .setDescription("❌ Skycord tried to send an announcement but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
-                                                ]
-                                            });
-                                        }
-                                    } catch (err) {
-                                        console.error(err);
-                                    }
-                                    await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
-                                }
-
-                                break;
-                            }
+                            message = message + "\n";
                         }
-                    } catch (err) {
-                        console.error(`[LOG // ERROR] Something went wrong fetching API data, but we'll try again on the next pass...`)
+
+                        try {
+                            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
+                            for (const element of posts.data.feed)
+                            {
+                                if (element.post.author.handle == user)
+                                {
+                                    const post = element.post;
+                                    const postHead = post.uri.split("post/").pop();
+
+                                    console.log(`[LOG // STATUS] Just got recent post from: ${element.post.author.handle}`);
+
+                                    postTime = post.indexedAt.replace(/[^0-9]/g, '');
+
+                                    if (props[channel][user].indexedAt < postTime)
+                                    {
+                                        props[channel][user].indexedAt = postTime;
+                                        try {
+                                            const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                                            if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                                            {
+                                                await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                            }
+                                            else
+                                            {
+                                                const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+                                                await owner?.send({
+                                                    embeds: [new EmbedBuilder()
+                                                        .setColor("Red")
+                                                        .setDescription("❌ Skycord tried to send an announcement but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
+                                                    ]
+                                                });
+                                            }
+                                        } catch (err) {
+                                            console.error(err);
+                                        }
+                                        await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
+                                    }
+
+                                    break;
+                                }
+                            }
+                        } catch (err) {
+                            console.error(`[LOG // ERROR] Something went wrong fetching API data, but we'll try again on the next pass...`)
+                        }
+                        
+                        await sleep(100);
                     }
-                    
-                    await sleep(100);
                 }
             }
+        } catch (err) {
+            console.error(err);
         }
 
         this.StartScanning();
