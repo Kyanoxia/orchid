@@ -121,41 +121,45 @@ export default class Ready extends Event {
                         message = message + "\n";
                     }
 
-                    const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
-                    for (const element of posts.data.feed)
-                    {
-                        if (element.post.author.handle == user)
+                    try {
+                        const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
+                        for (const element of posts.data.feed)
                         {
-                            const post = element.post;
-                            const postHead = post.uri.split("post/").pop();
-
-                            postTime = post.indexedAt.replace(/[^0-9]/g, '');
-
-                            if (props[channel][user].indexedAt < postTime)
+                            if (element.post.author.handle == user)
                             {
-                                props[channel][user].indexedAt = postTime;
-                                try {
-                                    const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                                    if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
-                                    {
-                                        await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                const post = element.post;
+                                const postHead = post.uri.split("post/").pop();
+
+                                postTime = post.indexedAt.replace(/[^0-9]/g, '');
+
+                                if (props[channel][user].indexedAt < postTime)
+                                {
+                                    props[channel][user].indexedAt = postTime;
+                                    try {
+                                        const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                                        if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                                        {
+                                            await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                        }
+                                        else
+                                        {
+                                            const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+                                            await owner?.send({
+                                                embeds: [new EmbedBuilder()
+                                                    .setColor("Red")
+                                                    .setDescription("❌ Skycord tried to send a message but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
+                                                ]
+                                            });
+                                        }
+                                    } catch (err) {
+                                        console.error(err);
                                     }
-                                    else
-                                    {
-                                        const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                        await owner?.send({
-                                            embeds: [new EmbedBuilder()
-                                                .setColor("Red")
-                                                .setDescription("❌ Skycord tried to send a message but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
-                                            ]
-                                        });
-                                    }
-                                } catch (err) {
-                                    console.error(err);
+                                    await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
                                 }
-                                await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
                             }
                         }
+                    } catch (err) {
+                        console.error(`[LOG // ERROR] Something went wrong fetching API data, but we'll try again on the next pass...`)
                     }
                     
                     await sleep(100);
