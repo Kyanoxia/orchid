@@ -101,7 +101,7 @@ export default class Ready extends Event {
                 {
                     console.log(`[LOG // STATUS] No longer in guild ${guild}. Deleting document...`)
                     await SubscriberConfig.deleteMany({ guildID: guild }).catch();
-                    break;
+                    continue;
                 }
 
                 for (const channel in props)
