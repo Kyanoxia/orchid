@@ -158,6 +158,8 @@ export default class Ready extends Event {
                                     }
                                     await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
                                 }
+
+                                break;
                             }
                         }
                     } catch (err) {
