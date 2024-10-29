@@ -130,6 +130,8 @@ export default class Ready extends Event {
                                 const post = element.post;
                                 const postHead = post.uri.split("post/").pop();
 
+                                console.log(`[LOG // STATUS] Just got recent post from: ${element.post.author.handle}`);
+
                                 postTime = post.indexedAt.replace(/[^0-9]/g, '');
 
                                 if (props[channel][user].indexedAt < postTime)
@@ -147,7 +149,7 @@ export default class Ready extends Event {
                                             await owner?.send({
                                                 embeds: [new EmbedBuilder()
                                                     .setColor("Red")
-                                                    .setDescription("❌ Skycord tried to send a message but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
+                                                    .setDescription("❌ Skycord tried to send an announcement but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
                                                 ]
                                             });
                                         }
