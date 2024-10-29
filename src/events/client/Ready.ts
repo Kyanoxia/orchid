@@ -171,10 +171,11 @@ export default class Ready extends Event {
                     }
                 }
             }
+
+            this.StartScanning();
         } catch (err) {
             console.error(err);
+            this.StartScanning();
         }
-
-        this.StartScanning();
     }
 }
