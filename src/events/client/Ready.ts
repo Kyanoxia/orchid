@@ -157,14 +157,19 @@ export default class Ready extends Event {
                                         } catch (err) {
                                             console.error(err);
                                         }
-                                        await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } }).catch();
+
+                                        try {
+                                            await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
+                                        } catch (err) {
+                                            console.error(err);
+                                        }
                                     }
 
                                     break;
                                 }
                             }
                         } catch (err) {
-                            console.error(`[LOG // ERROR] Something went wrong fetching API data, but we'll try again on the next pass...`)
+                            console.error(`[LOG // ERROR] Something went wrong fetching API data, but we'll try again on the next pass...`);
                         }
                         
                         await sleep(100);
