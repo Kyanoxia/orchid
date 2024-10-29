@@ -133,55 +133,72 @@ export default class Ready extends Event {
 
                         try {
                             console.log(`[LOG // DEBUG] Sending request for ${user}...`);
-                            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
-                            console.log(`[LOG // DEBUG] Got response from ${user}...`);
-                            for (const element of posts.data.feed)
-                            {
-                                if (element.post.author.handle == user)
+
+                            try {
+                                const posts = await new Promise((resolve, reject) => {
+                                    const timeoutId = setTimeout(() => {
+                                        reject(new Error(`Timed out request for ${user}`))
+                                    }, 2000)
+                                  
+                                    axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`).then(value => {
+                                        clearTimeout(timeoutId);
+                                        resolve(value);
+                                    });
+                                });
+
+                                console.log(`[LOG // DEBUG] Got response from ${user}...`);
+
+                                //@ts-expect-error
+                                for (const element of posts.data.feed)
                                 {
-                                    const post = element.post;
-                                    const postHead = post.uri.split("post/").pop();
-
-                                    console.log(`[LOG // DEBUG] Just got recent post from: ${element.post.author.handle}`);
-
-                                    postTime = post.indexedAt.replace(/[^0-9]/g, '');
-
-                                    if (props[channel][user].indexedAt < postTime)
+                                    if (element.post.author.handle == user)
                                     {
-                                        props[channel][user].indexedAt = postTime;
-                                        try {
-                                            const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                                            if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
-                                            {
-                                                console.log(`[LOG // DEBUG] Sending announcement message for ${user}...`);
-                                                await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
-                                                console.log(`[LOG // DEBUG] Sent announcement message for ${user}...`);
+                                        const post = element.post;
+                                        const postHead = post.uri.split("post/").pop();
+    
+                                        console.log(`[LOG // DEBUG] Just got recent post from: ${element.post.author.handle}`);
+    
+                                        postTime = post.indexedAt.replace(/[^0-9]/g, '');
+    
+                                        if (props[channel][user].indexedAt < postTime)
+                                        {
+                                            props[channel][user].indexedAt = postTime;
+                                            try {
+                                                const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                                                if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                                                {
+                                                    console.log(`[LOG // DEBUG] Sending announcement message for ${user}...`);
+                                                    await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
+                                                    console.log(`[LOG // DEBUG] Sent announcement message for ${user}...`);
+                                                }
+                                                else
+                                                {
+                                                    const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+                                                    await owner?.send({
+                                                        embeds: [new EmbedBuilder()
+                                                            .setColor("Red")
+                                                            .setDescription("❌ Skycord tried to send an announcement but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
+                                                        ]
+                                                    });
+                                                }
+                                            } catch (err) {
+                                                console.error(err);
                                             }
-                                            else
-                                            {
-                                                const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                                await owner?.send({
-                                                    embeds: [new EmbedBuilder()
-                                                        .setColor("Red")
-                                                        .setDescription("❌ Skycord tried to send an announcement but it received an invalid response!  Please make sure Skycord has permission to send messages in your channel, and try again.")
-                                                    ]
-                                                });
+    
+                                            try {
+                                                console.log(`[LOG // DEBUG] Updating database for ${guild}...`);
+                                                await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
+                                                console.log(`[LOG // DEBUG] Updated Database for ${guild}`);
+                                            } catch (err) {
+                                                console.error(err);
                                             }
-                                        } catch (err) {
-                                            console.error(err);
                                         }
-
-                                        try {
-                                            console.log(`[LOG // DEBUG] Updating database for ${guild}...`);
-                                            await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
-                                            console.log(`[LOG // DEBUG] Updated Database for ${guild}`);
-                                        } catch (err) {
-                                            console.error(err);
-                                        }
+    
+                                        break;
                                     }
-
-                                    break;
                                 }
+                            } catch (err) {
+                                console.error(`[LOG // ERROR] ${err}`)
                             }
                         } catch (err) {
                             console.error(`[LOG // ERROR] Something went wrong fetching API data, but we'll try again on the next pass...`);
