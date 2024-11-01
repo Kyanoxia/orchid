@@ -107,12 +107,11 @@ export default class Ready extends Event {
                         await SubscriberConfig.deleteMany({ guildID: guild });
                         console.log(`[LOG // DEBUG] Deleted Guild Entry: ${guild}`);
                     } catch (err) {
-                        console.error(err);
+                        console.error(`[LOG // ERROR] ${err}`);
                     }
                     continue;
                 }
 
-                console.log(`[LOG // DEBUG] Looping through Local Mongo DB`);
                 for (const channel in props)
                 {
                     for (const user in props[channel])
@@ -182,7 +181,7 @@ export default class Ready extends Event {
                                                     });
                                                 }
                                             } catch (err) {
-                                                console.error(err);
+                                                console.error(`[LOG // ERROR] ${err}`);
                                             }
     
                                             try {
@@ -190,7 +189,7 @@ export default class Ready extends Event {
                                                 await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
                                                 console.log(`[LOG // DEBUG] Updated Database for ${guild}`);
                                             } catch (err) {
-                                                console.error(err);
+                                                console.error(`[LOG // ERROR] ${err}`);
                                             }
                                         }
     
@@ -204,7 +203,7 @@ export default class Ready extends Event {
                             console.error(`[LOG // ERROR] Something went wrong fetching API data, but we'll try again on the next pass...`);
                         }
                         
-                        await sleep(100);
+                        await sleep(60);
                     }
                 }
             }

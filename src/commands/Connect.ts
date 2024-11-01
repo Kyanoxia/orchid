@@ -25,17 +25,18 @@ export default class Connect extends Command {
                 },
                 {
                     name: "provider",
-                    description: "The embed provider you wish to use",
+                    description: "The embed provider you wish to use (Recommended: VixBluesky)",
                     required: true,
                     type: ApplicationCommandOptionType.String,
                     choices: [
-                        { name: "BlueSky Vanilla (bsky.app)", value: "bsky.app" },
-                        { name: "FX Bsky (fxbsky.app)", value: "fxbsky.app" }
+                        { name: "BlueSky (bsky.app)", value: "bsky.app" },
+                        { name: "FX Bsky (fxbsky.app)", value: "fxbsky.app" },
+                        { name: "VixBluesky (bskyx.app)", value: "bskyx.app" }
                     ]
                 },
                 {
                     name: "replies",
-                    description: "Weather to announce replies or not",
+                    description: "Whether to announce replies or not",
                     required: true,
                     type: ApplicationCommandOptionType.Boolean,
                     choices: [

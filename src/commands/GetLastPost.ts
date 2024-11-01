@@ -20,6 +20,16 @@ export default class GetLastPost extends Command {
                     required: true,
                     type: ApplicationCommandOptionType.String,
                     choices: []
+                },
+                {
+                    name: "replies",
+                    description: "Whether to announce replies or not",
+                    required: true,
+                    type: ApplicationCommandOptionType.Boolean,
+                    choices: [
+                        { name: "True", content: true },
+                        { name: "False", content: false }
+                    ]
                 }
             ],
             dev: false
@@ -27,11 +37,25 @@ export default class GetLastPost extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply()
+        await interaction.deferReply({ ephemeral: true });
         const username = interaction.options.getString("username");
+        const replies = interaction.options.getBoolean("replies");
+
+        const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 
         try {
-            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}&filter=posts_no_replies`);
+            const posts = await new Promise((resolve, reject) => {
+                const timeoutId = setTimeout(() => {
+                    reject(new Error(`Timed out request for ${username}`))
+                }, 2000)
+              
+                axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}${filterReplies}`).then(value => {
+                    clearTimeout(timeoutId);
+                    resolve(value);
+                });
+            });
+
+            //@ts-expect-error
             for (const element of posts.data.feed)
             {
                 if (element.post.author.handle == username)
@@ -39,15 +63,14 @@ export default class GetLastPost extends Command {
                     const post = element.post;
                     const postHead = post.uri.split("post/").pop();
 
-                    await interaction.editReply({ content: `Most recent post from user: ${username}\nhttps://fxbsky.app/profile/${post.author.handle}/post/${postHead}` });
+                    await interaction.editReply({ content: `Most recent post from user: ${username}\nhttps://bsky.app/profile/${post.author.handle}/post/${postHead}` });
 
                     break;
                 }
             }
         } catch (err) {
-            console.error("[LOG // ERROR] Invalid response while getting post. Please check error logs.");
-            console.error(err);
-            await interaction.editReply({ content: "Unable to fetch data.  Please check console." })
+            console.error(`[LOG // ERROR] ${err}`);
+            await interaction.editReply({ content: "Unable to fetch data.  Please make sure everything is spelled correctly." })
         }
     }
 }
