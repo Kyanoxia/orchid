@@ -24,7 +24,8 @@ export default class Emit extends Command {
                         { name: "GuildDelete", value: Events.GuildDelete }
                     ]
                 }
-            ]
+            ],
+            ephemeral: true
         });
     }
 

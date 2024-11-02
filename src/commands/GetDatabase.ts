@@ -14,12 +14,12 @@ export default class GetDatabase extends Command {
             global_permission: true,
             cooldown: 3,
             options: [],
-            dev: true
+            dev: true,
+            ephemeral: true
         });
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply();
         try {
             const db = await SubscriberConfig.find({})
             for (const element in db)

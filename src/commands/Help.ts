@@ -13,12 +13,12 @@ export default class Help extends Command {
             global_permission: true,
             cooldown: 3,
             options: [],
-            dev: false
+            dev: false,
+            ephemeral: false
         });
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply();
         await interaction.editReply({
             embeds: [new EmbedBuilder()
                 .setThumbnail(this.client.user?.displayAvatarURL()!)

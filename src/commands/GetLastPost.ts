@@ -24,7 +24,7 @@ export default class GetLastPost extends Command {
                 {
                     name: "replies",
                     description: "Whether to announce replies or not",
-                    required: true,
+                    required: false,
                     type: ApplicationCommandOptionType.Boolean,
                     choices: [
                         { name: "True", content: true },
@@ -32,14 +32,16 @@ export default class GetLastPost extends Command {
                     ]
                 }
             ],
-            dev: false
+            dev: false,
+            ephemeral: false
         });
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply({ ephemeral: true });
         const username = interaction.options.getString("username");
-        const replies = interaction.options.getBoolean("replies");
+        var replies = interaction.options.getBoolean("replies");
+
+        replies = replies != null ? true : false;
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 

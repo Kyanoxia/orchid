@@ -14,13 +14,12 @@ export default class GetDatabase extends Command {
             global_permission: false,
             cooldown: 3,
             options: [],
-            dev: false
+            dev: false,
+            ephemeral: true
         });
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply();
-
         var message: string = "";
         const db = await SubscriberConfig.find({ guildID: interaction.guildId });
         for (const element in db)

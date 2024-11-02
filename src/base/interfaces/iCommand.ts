@@ -12,6 +12,7 @@ export default interface ICommand {
     global_permission: boolean;
     cooldown: number;
     dev: boolean;
+    ephemeral: boolean;
 
     Execute(Interaction: ChatInputCommandInteraction): void;
     AutoComplete(Interaction: AutocompleteInteraction): void;

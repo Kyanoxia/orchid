@@ -14,6 +14,7 @@ export default class Command implements ICommand {
     global_permission: boolean;
     cooldown: number;
     dev: boolean;
+    ephemeral: boolean;
 
     constructor(client: CustomClient, options: ICommandOptions) {
         this.client = client;
@@ -25,6 +26,7 @@ export default class Command implements ICommand {
         this.global_permission = options.global_permission;
         this.cooldown = options.cooldown;
         this.dev = options.dev;
+        this.ephemeral = options.ephemeral;
     }
 
     Execute(Interaction: ChatInputCommandInteraction): void {

@@ -9,4 +9,5 @@ export default interface ICommandOptions {
     global_permission: boolean;
     cooldown: number;
     dev: boolean;
+    ephemeral: boolean;
 }

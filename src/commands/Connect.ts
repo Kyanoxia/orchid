@@ -24,9 +24,16 @@ export default class Connect extends Command {
                     choices: []
                 },
                 {
+                    name: "message",
+                    description: "The message to preface announcements with",
+                    required: false,
+                    type: ApplicationCommandOptionType.String,
+                    choices: []
+                },
+                {
                     name: "provider",
                     description: "The embed provider you wish to use (Recommended: VixBluesky)",
-                    required: true,
+                    required: false,
                     type: ApplicationCommandOptionType.String,
                     choices: [
                         { name: "BlueSky (bsky.app)", value: "bsky.app" },
@@ -37,36 +44,28 @@ export default class Connect extends Command {
                 {
                     name: "replies",
                     description: "Whether to announce replies or not",
-                    required: true,
+                    required: false,
                     type: ApplicationCommandOptionType.Boolean,
                     choices: [
                         { name: "True", content: true },
                         { name: "False", content: false }
                     ]
-                },
-                {
-                    name: "message",
-                    description: "The message to preface announcements with",
-                    required: false,
-                    type: ApplicationCommandOptionType.String,
-                    choices: []
                 }
             ],
-            dev: false
+            dev: false,
+            ephemeral: false
         });
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply();
         const username = interaction.options.getString("username");
-        const provider = interaction.options.getString("provider");
-        const replies = interaction.options.getBoolean("replies");
+        var provider = interaction.options.getString("provider");
         var message = interaction.options.getString("message");
+        var replies = interaction.options.getBoolean("replies");
 
-        if (!message)
-        {
-            message = "";
-        }
+        message = message != null ? message : "";
+        provider = provider != null ? provider : "bskyx.app";
+        replies = replies != null ? true : false;
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 

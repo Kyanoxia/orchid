@@ -22,7 +22,8 @@ export default class Disconnect extends Command {
                     choices: []
                 }
             ],
-            dev: false
+            dev: false,
+            ephemeral: false
         });
     }
 

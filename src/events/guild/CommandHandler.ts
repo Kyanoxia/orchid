@@ -20,14 +20,16 @@ export default class CommandHandler extends Event {
 
         const command: Command = this.client.commands.get(interaction.commandName)!;
 
+        await interaction.deferReply({ephemeral: command.ephemeral});
+
         //@ts-expect-error
-        if (!command) return interaction.reply({ content: "This command does not exist!", ephemeral: true }) && this.client.commands.delete(interaction.commandName);
+        if (!command) return interaction.editReply({ content: "This command does not exist!" }) && this.client.commands.delete(interaction.commandName);
 
         if (command.dev && !process.env.devUID.includes(interaction.user.id))
-            return interaction.reply({ embeds: [new EmbedBuilder()
+            return interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(`❌ This command is only available to developers.`)
-            ], ephemeral: true })
+            ]})
 
         const { cooldowns } = this.client;
         if (!cooldowns.has(command.name)) cooldowns.set(command.name, new Collection());
@@ -37,11 +39,11 @@ export default class CommandHandler extends Event {
         const cooldownAmount = (command.cooldown || 3) * 1000;
 
         if (timestamps.has(interaction.user.id) && (now < (timestamps.get(interaction.user.id) || 0) + cooldownAmount))
-            return interaction.reply({
+            return interaction.editReply({
                 embeds: [new EmbedBuilder()
                     .setColor("Red")
                     .setDescription(`❌ Please wait another \`${((((timestamps.get(interaction.user.id) || 0) + cooldownAmount) - now) / 1000).toFixed(1)}\` seconds to run this command.`)
-                ], ephemeral: true
+                ]
             });
         
         timestamps.set(interaction.user.id, now);
@@ -52,8 +54,8 @@ export default class CommandHandler extends Event {
             const subCommand = `${interaction.commandName}${subCommandGroup ? `.${subCommandGroup}` : ""}.${interaction.options.getSubcommand(false) || ""}`;
 
             return this.client.subCommands.get(subCommand)?.Execute(interaction) || command.Execute(interaction);
-        } catch (ex) {
-            console.log(ex);
+        } catch (err) {
+            console.log(err);
         }
     }
 }
