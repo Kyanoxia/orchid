@@ -55,7 +55,7 @@ export default class CommandHandler extends Event {
 
             return this.client.subCommands.get(subCommand)?.Execute(interaction) || command.Execute(interaction);
         } catch (err) {
-            console.log(err);
+            console.error(err);
         }
     }
 }

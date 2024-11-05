@@ -20,12 +20,12 @@ export default class Subscriber implements ISubscriber {
     }
 
     Init(): void {
-        console.log("[LOG // STATUS] ", this.guild);
-        console.log("[LOG // STATUS] ", this.channel);
-        console.log("[LOG // STATUS] ", this.username);
-        console.log("[LOG // STATUS] ", this.message);
-        console.log("[LOG // STATUS] ", this.embedProvider);
-        console.log("[LOG // STATUS] ", this.replies);
+        console.info(this.guild);
+        console.info(this.channel);
+        console.info(this.username);
+        console.info(this.message);
+        console.info(this.embedProvider);
+        console.info(this.replies);
     }
 
     toJSON(): object[] {

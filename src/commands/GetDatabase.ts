@@ -35,7 +35,7 @@ export default class GetDatabase extends Command {
                 console.log(guild.id, channels);
             })
         } catch (err) {
-            console.error(`[LOG // ERROR] ${err}`);
+            console.error(err);
         }
 
         await interaction.editReply({ content: "Please check your developer console..." })

@@ -12,7 +12,7 @@ export default class GuildCreat extends Event {
     }
 
     async Execute(guild: Guild) {
-        console.log(`[LOG // STATUS] Bot joined a new server: ${guild.id}`);
+        console.log(`Bot joined a new server: ${guild.id}`);
 
         const owner = await guild.fetchOwner();
         owner?.send({ embeds: [new EmbedBuilder()

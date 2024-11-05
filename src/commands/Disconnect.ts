@@ -31,11 +31,11 @@ export default class Disconnect extends Command {
         await interaction.deferReply();
         const username = interaction.options.getString("username");
 
-        console.log(`[LOG // STATUS] Unsubscribing to ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
+        console.info(`[LOG // STATUS // ${new Date().toISOString()}] Unsubscribing to ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
 
         if (!await SubscriberConfig.exists({ guildID: interaction.guildId }))
         {
-            console.log(`[LOG // WARN] Cannot delete subscription in unregistered guild: ${interaction.guildId}`);
+            console.warn(`[LOG // WARN // ${new Date().toISOString()}] Cannot delete subscription in unregistered guild: ${interaction.guildId}`);
             await interaction.reply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(`❌ Can not delete subscription in unregistered guild!`)
@@ -79,20 +79,20 @@ export default class Disconnect extends Command {
             // Update the database (delete entry if empty)
             if (Object.keys(mongo).length == 0)
             {
-                console.log(`[LOG // STATUS] No more subscriptions found in ${interaction.guildId}. Deleting document...`);
+                console.info(`[LOG // STATUS // ${new Date().toISOString()}] No more subscriptions found in ${interaction.guildId}. Deleting document...`);
                 try {
                     await SubscriberConfig.deleteMany({ guildID: interaction.guildId });
                 } catch (err) {
-                    console.log(err);
+                    console.error(err);
                 }
             }
             else
             {
-                console.log(`[LOG // STATUS] Updating information for ${interaction.guildId}`);
+                console.info(`[LOG // STATUS // ${new Date().toISOString()}] Updating information for ${interaction.guildId}`);
                 try {
                     await SubscriberConfig.updateOne({ guildID: interaction.guildId }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
                 } catch (err) {
-                    console.log(err);
+                    console.error(err);
                 }
             }
 

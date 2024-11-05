@@ -58,7 +58,7 @@ export default class Connect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        const username = interaction.options.getString("username");
+        var username = interaction.options.getString("username");
         var provider = interaction.options.getString("provider");
         var message = interaction.options.getString("message");
         var replies = interaction.options.getBoolean("replies");
@@ -68,6 +68,13 @@ export default class Connect extends Command {
         replies = replies != null ? true : false;
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
+
+        try {
+            const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
+            username = didReq.data.did;
+        } catch (err) {
+            console.error(err);
+        }
 
         // Get latest post
         try {
@@ -96,8 +103,8 @@ export default class Connect extends Command {
             // If our guild isn't registered, register it
             if (!await SubscriberConfig.exists({ guildID: sub.guild }))
             {
-                console.log(`[LOG // STATUS] Subscribing to ${sub.username} in guild: ${sub.guild}...`);
-                await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`[LOG // SUCCESS] Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel} with replies: ${replies} and embed provider: ${provider}`)})
+                console.info(`Subscribing to ${sub.username} in guild: ${sub.guild}...`);
+                await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel} with replies: ${replies} and embed provider: ${provider}`)})
             }
             else
             {

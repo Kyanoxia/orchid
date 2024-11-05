@@ -12,6 +12,6 @@ export default class GuildDelete extends Event {
     }
 
     async Execute(guild: Guild) {
-        console.log(`[LOG // STATUS] Bot left a server: ${guild.id}`);
+        console.log(`Bot left a server: ${guild.id}`);
     }
 }
