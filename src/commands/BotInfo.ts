@@ -36,7 +36,7 @@ export default class BotInfo extends Command {
                         > **Dependencies:** \`${Object.keys(dependencies).map((p) => (`${p}-V${dependencies[p]}`).replace(/\^/g, "")).join(", ")}\`
                         > **Uptime:** \`${ms(this.client.uptime!, { long: false })}\``)
                 .setFooter({ text: "For more information, please visit the bot's README", iconURL: this.client.user?.displayAvatarURL() })
-                .setURL("https://github.com/Kyanoxia/skycord?tab=readme-ov-file#commands")
+                .setURL("https://github.com/Kyanoxia/skycord")
                 .setTitle("Bot Information")
         ] });
     }

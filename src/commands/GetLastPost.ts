@@ -71,7 +71,7 @@ export default class GetLastPost extends Command {
                 }
             }
         } catch (err) {
-            console.error(`[LOG // ERROR] ${err}`);
+            console.error(err);
             await interaction.editReply({ content: "Unable to fetch data.  Please make sure everything is spelled correctly." })
         }
     }

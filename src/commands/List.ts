@@ -3,6 +3,7 @@ import Command from "../base/classes/Command";
 import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
+import axios from "axios";
 
 export default class GetDatabase extends Command {
     constructor(client: CustomClient) {
@@ -30,7 +31,15 @@ export default class GetDatabase extends Command {
 
             for (const user in props[channel])
             {
-                message = message + sub + (user + ": " + "Embeds by `" + props[channel][user].embedProvider + "` - Replies? `" + props[channel][user].replies + "`\n");
+                var username;
+                try {
+                    const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${user}`);
+                    username = didReq.data.handle;
+                } catch (err) {
+                    console.error(err);
+                }
+
+                message = message + sub + ("`" + user + "`" + " (" + username + ")" + ":\n" + "Embeds by `" + props[channel][user].embedProvider + "` - Replies? `" + props[channel][user].replies + "`\n");
             }
         }
 
