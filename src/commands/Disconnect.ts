@@ -30,11 +30,13 @@ export default class Disconnect extends Command {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         await interaction.deferReply();
-        var username = interaction.options.getString("username");
+        const username = interaction.options.getString("username");
+
+        var uid
 
         try {
             const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
-            username = didReq.data.did;
+            uid = didReq.data.did;
         } catch (err) {
             console.error(err);
         }
@@ -61,7 +63,7 @@ export default class Disconnect extends Command {
                 for (var user in mongo[channel])
                 {
                     // Delete the subscription if we have it
-                    if (Object.keys(mongo[channel]).includes(`${username}`))
+                    if (Object.keys(mongo[channel]).includes(`${username}`) || Object.keys(mongo[channel]).includes(`${uid}`))
                     {
                         delete mongo[channel][user];
                     }
