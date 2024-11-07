@@ -1,6 +1,6 @@
 {
-  "name": "bluecord",
-  "version": "1.2.1",
+  "name": "skycord",
+  "version": "1.2.3",
   "description": "Bluesky Discord bot",
   "main": "index.js",
   "scripts": {
