@@ -29,24 +29,24 @@ export default class Disconnect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
-        await interaction.deferReply();
         const username = interaction.options.getString("username");
 
         var uid
 
         try {
+            console.log("Sending API request for UID");
             const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
             uid = didReq.data.did;
         } catch (err) {
             console.error(err);
         }
 
-        console.info(`Unsubscribing to ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
+        console.info(`Unsubscribing from ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
 
         if (!await SubscriberConfig.exists({ guildID: interaction.guildId }))
         {
             console.warn(`Cannot delete subscription in unregistered guild: ${interaction.guildId}`);
-            await interaction.reply({ embeds: [new EmbedBuilder()
+            await interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
                 .setDescription(`❌ Can not delete subscription in unregistered guild!`)
             ]
@@ -63,9 +63,13 @@ export default class Disconnect extends Command {
                 for (var user in mongo[channel])
                 {
                     // Delete the subscription if we have it
-                    if (Object.keys(mongo[channel]).includes(`${username}`) || Object.keys(mongo[channel]).includes(`${uid}`))
+                    if (Object.keys(mongo[channel]).includes(`${username}`))
                     {
-                        delete mongo[channel][user];
+                        delete mongo[channel][username!];
+                    }
+                    else if (Object.keys(mongo[channel]).includes(`${uid}`))
+                    {
+                        delete mongo[channel][uid!];
                     }
                     else
                     {
