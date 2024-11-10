@@ -60,27 +60,24 @@ export default class Disconnect extends Command {
             // Check if our subscription is present
             for (var channel in mongo)
             {
-                for (var user in mongo[channel])
+                // Delete the subscription if we have it
+                if (Object.keys(mongo[channel]).includes(`${username}`))
                 {
-                    // Delete the subscription if we have it
-                    if (Object.keys(mongo[channel]).includes(`${username}`))
-                    {
-                        delete mongo[channel][username!];
-                    }
-                    else if (Object.keys(mongo[channel]).includes(`${uid}`))
-                    {
-                        delete mongo[channel][uid!];
-                    }
-                    else
-                    {
-                        await interaction.editReply({ embeds: [new EmbedBuilder()
-                            .setColor("Red")
-                            .setDescription("❌ Can not unsubscribe from unregistered user!")
-                        ]
-                        });
+                    delete mongo[channel][username!];
+                }
+                else if (Object.keys(mongo[channel]).includes(`${uid}`))
+                {
+                    delete mongo[channel][uid!];
+                }
+                else
+                {
+                    await interaction.editReply({ embeds: [new EmbedBuilder()
+                        .setColor("Red")
+                        .setDescription("❌ Can not unsubscribe from unregistered user!")
+                    ]
+                    });
 
-                        return;
-                    }
+                    return;
                 }
 
                 // Delete the whole channel if it's empty

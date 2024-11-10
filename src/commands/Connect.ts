@@ -65,7 +65,7 @@ export default class Connect extends Command {
 
         message = message != null ? message : "";
         provider = provider != null ? provider : "bskyx.app";
-        replies = replies != null ? true : false;
+        replies = replies != null ? replies : false;
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 

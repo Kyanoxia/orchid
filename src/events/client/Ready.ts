@@ -151,14 +151,6 @@ export default class Ready extends Event {
                                         } catch (err) {
                                             console.error(`Axios responded with: ${err}`);
 
-                                            const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                            await owner?.send({
-                                                embeds: [new EmbedBuilder()
-                                                    .setColor("Red")
-                                                    .setDescription("❌ Skycord tried to send an announcement but something went wrong!  Please reconnect your account.")
-                                                ]
-                                            });
-
                                             const gChannel = this.client.channels.cache.get(channel) as TextChannel;
                                             if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
                                             {
@@ -171,7 +163,7 @@ export default class Ready extends Event {
                                                         await owner?.send({
                                                             embeds: [new EmbedBuilder()
                                                                 .setColor("Red")
-                                                                .setDescription("❌ Skycord tried to send an announcement but something went wrong!  Please make sure Skycord has permission to send messages in your channel, and try again.")
+                                                                .setDescription(`❌ Unfortunately we were unable to get updates for the account: \`${user}\`.  Please reconnect it.`)
                                                             ]
                                                         });
                                                     } catch (err) {
