@@ -32,13 +32,14 @@ export default class Connect extends Command {
                 },
                 {
                     name: "provider",
-                    description: "The embed provider you wish to use (Recommended: VixBluesky)",
+                    description: "The embed provider you wish to use (Recommended: Bskye)",
                     required: false,
                     type: ApplicationCommandOptionType.String,
                     choices: [
                         { name: "BlueSky (bsky.app)", value: "bsky.app" },
                         { name: "FX Bsky (fxbsky.app)", value: "fxbsky.app" },
-                        { name: "VixBluesky (bskyx.app)", value: "bskyx.app" }
+                        { name: "VixBluesky (bskyx.app)", value: "bskyx.app" },
+                        { name: "Bskye (bskye.app)", value: "bskye.app" }
                     ]
                 },
                 {
@@ -64,7 +65,7 @@ export default class Connect extends Command {
         var replies = interaction.options.getBoolean("replies");
 
         message = message != null ? message : "";
-        provider = provider != null ? provider : "bskyx.app";
+        provider = provider != null ? provider : "bskye.app";
         replies = replies != null ? replies : false;
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
