@@ -193,7 +193,7 @@ export default class Connect extends Command {
         } catch (err) {
             await interaction.editReply({embeds: [new EmbedBuilder()
                 .setColor("Red")
-                .setDescription(`❌ Uh oh! It looks like we didn't receive a response for that request.  Please make sure you spelled the user's handle correctly!`)
+                .setDescription(`❌ Uh oh! It looks like we didn't receive a response for that request.  Please make sure you spelled the user's handle correctly and try again!`)
             ]})
         }
     }

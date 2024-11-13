@@ -41,7 +41,7 @@ export default class GetLastPost extends Command {
         const username = interaction.options.getString("username");
         var replies = interaction.options.getBoolean("replies");
 
-        replies = replies != null ? true : false;
+        replies = replies != null ? replies : false;
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 
