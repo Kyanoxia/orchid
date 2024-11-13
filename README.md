@@ -9,7 +9,7 @@ A Discord bot to announce new posts from Bluesky!
 </p>
 
 ## Getting Started
-To start, invite the bot to your server using [this URL](https://discord.com/oauth2/authorize?client_id=1297227452707373267).  Once it has successfully joined, use the `/connect` command to subscribe to a user!
+To start, please invite the bot to your server using [this URL](https://discord.com/oauth2/authorize?client_id=1297227452707373267).  Once it has successfully joined, use the `/connect` command to subscribe to a user!
 
 ### Commands
 **`<>` indicates required, `[]` indicates optional**
