@@ -4,7 +4,8 @@ A Discord bot to announce new posts from Bluesky!
 <img src="https://github.com/Kyanoxia/skycord/blob/main/assets/SkycordGithub.png" alt="skycord banner" width="100%"/>
 
 <p align="center">
-  <a href='https://ko-fi.com/D1D815CS41' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi5.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+  <a href='https://ko-fi.com/kyanoxia'><img src='https://img.shields.io/badge/Buy%20Me%20a%20Coffee!-whitesmoke?style=for-the-badge&logo=kofi&logoColor=whitesmoke&labelColor=dimgray&color=dimgray' alt='Buy Me a Coffee at ko-fi.com' /></a>
+  <a href='https://github.com/sponsors/kyanoxia'><img src='https://img.shields.io/github/sponsors/kyanoxia?style=for-the-badge&logo=githubsponsors&logoColor=hotpink&label=Sponsor%20me!&labelColor=dimgray&color=dimgray' /></a>
 </p>
 
 ## Getting Started
