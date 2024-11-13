@@ -238,6 +238,7 @@ export default class Ready extends Event {
 
                                                     // If regex is empty then we aren't matching anything (duh)
                                                     // We already sanitized during the connect process, so we don't need to check here
+                                                    regex = regex != null ? regex : "";
                                                     var match = regex != "" ? this.toRegExp(regex!).test(post.record.text) : false;
 
                                                     if (!match) {
