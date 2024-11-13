@@ -13,15 +13,15 @@ To start, please invite the bot to your server using [this URL](https://discord.
 
 ### Commands
 **`<>` indicates required, `[]` indicates optional**
-|    **Command Name**   |               **Description**               |                         **Usage**                          |
-| --------------------- | ------------------------------------------- | ---------------------------------------------------------- |
-| `/botinfo`            | (global) Display information about Skycord  | `/botinfo`                                                 |
-| `/connect`            | Connect your BlueSky account                | `/connect <handle> <embed provider> <replies> [message]`   |
-| `/disconnect`         | Disconnect your BlueSky account             | `/disconnect <handle>`                                     |
-| `/getlastpost`        | (global) Get the latest post from a user    | `/getlastpost <handle>`                                    |
-| `/help`               | Display help page                           | `/help`                                                    |
-| `/info`               | Display information about a command         | `/info <subcommand>`                                       |
-| `/list`               | Display subscribed users in channel         | `/list`                                                    |
+|    **Command Name**   |               **Description**               |                             **Usage**                              |
+| --------------------- | ------------------------------------------- | ------------------------------------------------------------------ |
+| `/botinfo`            | (global) Display information about Skycord  | `/botinfo`                                                         |
+| `/connect`            | Connect your BlueSky account                | `/connect <handle> [embed provider] [replies] [message] [regex]`   |
+| `/disconnect`         | Disconnect your BlueSky account             | `/disconnect <handle>`                                             |
+| `/getlastpost`        | (global) Get the latest post from a user    | `/getlastpost <handle>`                                            |
+| `/help`               | Display help page                           | `/help`                                                            |
+| `/info`               | Display information about a command         | `/info <subcommand>`                                               |
+| `/list`               | Display subscribed users in channel         | `/list`                                                            |
 
 ## Self-Hosting
 ### Prerequisites

@@ -1,4 +1,4 @@
-import { ChatInputCommandInteraction, Collection, EmbedBuilder, Events, Guild } from "discord.js";
+import { ChatInputCommandInteraction, Collection, EmbedBuilder, Events } from "discord.js";
 import CustomClient from "../../base/classes/CustomClient";
 import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";

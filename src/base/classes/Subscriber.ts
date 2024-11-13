@@ -8,8 +8,9 @@ export default class Subscriber implements ISubscriber {
     indexedAt: number;
     embedProvider: string;
     replies: boolean;
+    regex: string;
 
-    constructor(guild: string, channel: string, username: string, message: string, indexedAt: number, embedProvider: string, replies: boolean) {
+    constructor(guild: string, channel: string, username: string, message: string, indexedAt: number, embedProvider: string, replies: boolean, regex: string) {
         this.guild = guild;
         this.channel = channel;
         this.username = username;
@@ -17,6 +18,7 @@ export default class Subscriber implements ISubscriber {
         this.indexedAt = indexedAt;
         this.embedProvider = embedProvider;
         this.replies = replies;
+        this.regex = regex;
     }
 
     Init(): void {
@@ -26,6 +28,7 @@ export default class Subscriber implements ISubscriber {
         console.info(this.message);
         console.info(this.embedProvider);
         console.info(this.replies);
+        console.info(this.regex);
     }
 
     toJSON(): object[] {
@@ -35,6 +38,7 @@ export default class Subscriber implements ISubscriber {
         const indexedAt = this.indexedAt;
         const embedProvider = this.embedProvider;
         const replies = this.replies;
+        const regex = this.regex;
 
         var json: any = {
             [channel]:
@@ -44,7 +48,8 @@ export default class Subscriber implements ISubscriber {
                     message: message,
                     indexedAt: indexedAt,
                     embedProvider: embedProvider,
-                    replies: replies
+                    replies: replies,
+                    regex: regex
                 }
             }
         }

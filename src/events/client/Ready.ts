@@ -1,4 +1,4 @@
-import { ActivityType, Collection, Events, TextChannel, REST, Routes, EmbedBuilder, GuildMember } from "discord.js";
+import { ActivityType, Collection, Events, TextChannel, REST, Routes, EmbedBuilder } from "discord.js";
 import CustomClient from "../../base/classes/CustomClient";
 import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";
@@ -82,6 +82,19 @@ export default class Ready extends Event {
         this.StatusLoop();
     }
 
+    // String to regex
+    private toRegExp(string: string): RegExp {
+        try {
+            const match = string.match(/^\/((?:\\.|[^\\])*)\/(.*)$/);
+            const exp = match![1];
+            const arg = match![2];
+
+            return new RegExp(exp, arg);
+        } catch (err) {
+            throw "Error while creating RegExp: " + err;
+        }
+    }
+
     private async StartScanning() {
         const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -120,6 +133,7 @@ export default class Ready extends Event {
                     for (const user in props[channel])
                     {
                         var message = props[channel][user].message;
+                        var regex = props[channel][user].regex;
                         const filterReplies: string = props[channel][user].replies ? "" : "&filter=posts_no_replies";
 
                         replies = Object.keys(props[channel][user]).includes('replies') ? props[channel][user].replies : false;
@@ -132,7 +146,7 @@ export default class Ready extends Event {
                         {
                             message = message + "\n";
                         }
-
+                        
                         try {
                             console.info(`Sending request for ${user}...`);
 
@@ -170,7 +184,7 @@ export default class Ready extends Event {
                                                         console.error(err);
                                                     }
                                                 }
-                                                console.log(`Sent announcement message for ${user}...`);
+                                                console.log(`Sent error message for ${user}...`);
                                             }
 
                                             // Delete problematic entry immediately, we do NOT need it.
@@ -221,22 +235,29 @@ export default class Ready extends Event {
                                                 if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
                                                 {
                                                     console.info(`Sending announcement message for ${user}...`);
-                                                    try {
-                                                        await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
-                                                    } catch (err) {
-                                                        const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+
+                                                    // If regex is empty then we aren't matching anything (duh)
+                                                    // We already sanitized during the connect process, so we don't need to check here
+                                                    var match = regex != "" ? this.toRegExp(regex!).test(post.record.text) : false;
+
+                                                    if (!match) {
                                                         try {
-                                                            await owner?.send({
-                                                                embeds: [new EmbedBuilder()
-                                                                    .setColor("Red")
-                                                                    .setDescription("❌ Skycord tried to send an announcement but something went wrong!  Please make sure Skycord has necessary permissions, and try again.")
-                                                                ]
-                                                            });
+                                                            await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
                                                         } catch (err) {
-                                                            console.error(err);
+                                                            const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+                                                            try {
+                                                                await owner?.send({
+                                                                    embeds: [new EmbedBuilder()
+                                                                        .setColor("Red")
+                                                                        .setDescription("❌ Skycord tried to send an announcement but something went wrong!  Please make sure Skycord has necessary permissions, and try again.")
+                                                                    ]
+                                                                });
+                                                            } catch (err) {
+                                                                console.error(err);
+                                                            }
                                                         }
+                                                        console.log(`Sent announcement message for ${user}...`);
                                                     }
-                                                    console.log(`Sent announcement message for ${user}...`);
                                                 }
                                                 else
                                                 {

@@ -51,6 +51,13 @@ export default class Connect extends Command {
                         { name: "True", content: true },
                         { name: "False", content: false }
                     ]
+                },
+                {
+                    name: "regex",
+                    description: "Regex blacklist to check on the body of your posts",
+                    required: false,
+                    type: ApplicationCommandOptionType.String,
+                    choices: []
                 }
             ],
             dev: false,
@@ -59,17 +66,58 @@ export default class Connect extends Command {
     }
 
     async Execute(interaction: ChatInputCommandInteraction) {
+        // Get every possible option
         var username = interaction.options.getString("username");
         var provider = interaction.options.getString("provider");
         var message = interaction.options.getString("message");
         var replies = interaction.options.getBoolean("replies");
+        var regex = interaction.options.getString("regex");
 
+        // Default options because I don't want to store null in the db
         message = message != null ? message : "";
         provider = provider != null ? provider : "bskye.app";
         replies = replies != null ? replies : false;
 
         const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
 
+        // String to regex
+        function toRegExp(string: string): RegExp {
+            try {
+                const match = string.match(/^\/((?:\\.|[^\\])*)\/(.*)$/);
+                const exp = match![1];
+                const arg = match![2];
+
+                return new RegExp(exp, arg);
+            } catch (err) {
+                throw "Error while creating RegExp: " + err;
+            }
+        }
+
+        // We're using regex
+        if (regex != null)
+        {
+            // If it's valid continue, otherwise stop the loop with an error
+            try {
+                console.info("Testing Valid Regex for user: ", username)
+                toRegExp(regex);
+            } catch (err) {
+                console.error(err);
+                await interaction.editReply({
+                    embeds: [new EmbedBuilder()
+                        .setColor("Red")
+                        .setDescription(`❌ Uh oh! You provided an invalid RegEx!  Please make sure your syntax and arguments are proper and try again!`)
+                    ]
+                });
+
+                return;
+            }
+        }
+        else
+        {
+            regex = "";
+        }
+
+        // Get user's DID
         try {
             const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
             username = didReq.data.did;
@@ -89,6 +137,7 @@ export default class Connect extends Command {
                 {
                     const post = element.post;
 
+                    // I don't know why I don't just use the premade functions to do this - it would be much easier and I could treat them as timecodes.
                     indexedAt = post.indexedAt.replace(/[^0-9]/g, '');
 
                     break;
@@ -99,7 +148,8 @@ export default class Connect extends Command {
                 }
             }
             
-            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, message!, indexedAt, provider!, replies!);
+            // Register subscriber for ease
+            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, message!, indexedAt, provider!, replies!, regex!);
 
             // If our guild isn't registered, register it
             if (!await SubscriberConfig.exists({ guildID: sub.guild }))
@@ -134,7 +184,8 @@ export default class Connect extends Command {
                                     message: sub.message,
                                     indexedAt: mongo[channel][user].indexedAt,
                                     embedProvider: sub.embedProvider,
-                                    replies: sub.replies
+                                    replies: sub.replies,
+                                    regex: sub.regex
                                 }
 
                                 // Stop checking (duh)
@@ -152,7 +203,8 @@ export default class Connect extends Command {
                                     message: sub.message,
                                     indexedAt: sub.indexedAt,
                                     embedProvider: sub.embedProvider,
-                                    replies: sub.replies
+                                    replies: sub.replies,
+                                    regex: sub.regex
                                 }
                             }
                         }
@@ -174,7 +226,8 @@ export default class Connect extends Command {
                                 message: sub.message,
                                 indexedAt: sub.indexedAt,
                                 embedProvider: sub.embedProvider,
-                                replies: sub.replies
+                                replies: sub.replies,
+                                regex: sub.regex
                             }
                         }
                     }
@@ -191,10 +244,12 @@ export default class Connect extends Command {
             ]
             });
         } catch (err) {
-            await interaction.editReply({embeds: [new EmbedBuilder()
-                .setColor("Red")
-                .setDescription(`❌ Uh oh! It looks like we didn't receive a response for that request.  Please make sure you spelled the user's handle correctly and try again!`)
-            ]})
+            await interaction.editReply({
+                embeds: [new EmbedBuilder()
+                    .setColor("Red")
+                    .setDescription(`❌ Uh oh! It looks like we didn't receive a response for that request.  Please make sure you spelled the user's handle correctly and try again!`)
+                ]
+            });
         }
     }
 }

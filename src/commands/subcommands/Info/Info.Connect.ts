@@ -22,6 +22,7 @@ export default class InfoConnect extends SubCommand {
                         > **\`message\`** Message to preface links with
                         > **\`provider\`** What embed provider the bot will use
                         > **\`replies\`** Whether the bot will announce replies or not
+                        > **\`regex\`** Regular Expression (RegEx) to filter your posts (blacklist mode)
                          `)
                 .setFooter({ text: "For more information, please visit the bot's README (available through the embed link)", iconURL: this.client.user?.displayAvatarURL() })
                 .setURL("https://github.com/Kyanoxia/skycord?tab=readme-ov-file#commands")
