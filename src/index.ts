@@ -22,7 +22,7 @@ console.warn = function () {
 };
 
 console.error = function () {
-    const preface = `[${Date.now()}][ERRor] - `
+    const preface = `[${Date.now()}][ERROR] - `
     error.apply(console, [preface, ...arguments]);
 };
 
