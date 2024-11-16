@@ -32,16 +32,50 @@ export default class Disconnect extends Command {
         const username = interaction.options.getString("username");
 
         var uid
+        var number: number = 0;
 
-        try {
-            console.log("Sending API request for UID");
-            const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
-            uid = didReq.data.did;
-        } catch (err) {
-            console.error(err);
+        async function GetAPIData() {
+            if (number >= 3) return;
+            try {
+                console.log("Sending API request for UID");
+    
+                uid = await new Promise<string>(async (resolve, reject) => {
+                    const timeoutId = setTimeout(() => {
+                        reject(new Error(`Timed out request for ${username}`))
+                    }, 2000);
+    
+                    var value;
+                    try {
+                        value = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
+                        uid = value.data.did;
+                    } catch (err) {
+                        console.error(`Axios responded with: ${err}`);
+                    }
+    
+                    clearTimeout(timeoutId);
+                    resolve(value?.data.did);
+
+                    console.log("Resolved API Request for UID: " + value?.data.did);
+                });
+    
+            } catch (err) {
+                console.error(err);
+                console.warn("Trying again (" + number + ")...");
+                number++;
+
+                await interaction.editReply({ embeds: [new EmbedBuilder()
+                    .setColor("Red")
+                    .setDescription(`❌ The BlueSky API is taking too long to respond!  Trying again... (${number})`)
+                ]
+                });
+
+                GetAPIData();
+            }
         }
 
-        console.info(`Unsubscribing from ${username} in ${interaction.guildId} / ${interaction.channelId}...`)
+        await GetAPIData();
+
+        console.info(`Unsubscribing from ${username} (${uid}) in ${interaction.guildId} / ${interaction.channelId}...`)
 
         if (!await SubscriberConfig.exists({ guildID: interaction.guildId }))
         {
