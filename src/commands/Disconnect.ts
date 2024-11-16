@@ -97,14 +97,17 @@ export default class Disconnect extends Command {
                 // Delete the subscription if we have it
                 if (Object.keys(mongo[channel]).includes(`${username}`))
                 {
+                    console.info("Username found (deleting entry): " + username);
                     delete mongo[channel][username!];
                 }
                 else if (Object.keys(mongo[channel]).includes(`${uid}`))
                 {
+                    console.info("DID Found (deleting entry): " + uid);
                     delete mongo[channel][uid!];
                 }
                 else
                 {
+                    console.warn("User not found: " + uid + " " + username);
                     await interaction.editReply({ embeds: [new EmbedBuilder()
                         .setColor("Red")
                         .setDescription("❌ Can not unsubscribe from unregistered user!")
@@ -117,6 +120,7 @@ export default class Disconnect extends Command {
                 // Delete the whole channel if it's empty
                 if (Object.keys(mongo[channel]).length == 0)
                 {
+                    console.info("Channel empty, deleting (" + channel + ")...");
                     delete mongo[channel];
                 }
             }
@@ -135,7 +139,7 @@ export default class Disconnect extends Command {
             {
                 console.log(`Updating information for ${interaction.guildId}`);
                 try {
-                    await SubscriberConfig.updateOne({ guildID: interaction.guildId }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
+                    await SubscriberConfig.updateOne({ guildID: interaction.guildId }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } });
                 } catch (err) {
                     console.error(err);
                 }
@@ -143,7 +147,7 @@ export default class Disconnect extends Command {
 
             await interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
-                .setDescription(`❌ Unsubscribed to user ${username} in channel <#${interaction.channelId}>`)
+                .setDescription(`❌ Unsubscribed to user ${username} (${uid}) in channel <#${interaction.channelId}>`)
             ]
             });
 
