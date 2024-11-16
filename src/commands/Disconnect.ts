@@ -91,38 +91,34 @@ export default class Disconnect extends Command {
             const db = await SubscriberConfig.find({ guildID: interaction.guildId });
             var mongo = JSON.parse(db[0].props);
 
-            // Check if our subscription is present
-            for (var channel in mongo)
+            var channel = interaction.channelId;
+
+            // Check if our subscription is present and delete it
+            if (mongo[channel][uid!])
             {
-                // Delete the subscription if we have it
-                if (Object.keys(mongo[channel]).includes(`${username}`))
-                {
-                    console.info("Username found (deleting entry): " + username);
-                    delete mongo[channel][username!];
-                }
-                else if (Object.keys(mongo[channel]).includes(`${uid}`))
-                {
-                    console.info("DID Found (deleting entry): " + uid);
-                    delete mongo[channel][uid!];
-                }
-                else
-                {
-                    console.warn("User not found: " + uid + " " + username);
-                    await interaction.editReply({ embeds: [new EmbedBuilder()
-                        .setColor("Red")
-                        .setDescription("❌ Can not unsubscribe from unregistered user!")
-                    ]
-                    });
+                console.info("DID found (deleting entry): " + uid);
+                delete mongo[channel][uid!];
+            }
+            else if (mongo[channel][username!])
+            {
+                console.info("Username found (deleting entry): " + username);
+                delete mongo[channel][username!];
+            }
+            else
+            {
+                console.warn("User not found: " + uid + " " + username);
+                await interaction.editReply({ embeds: [new EmbedBuilder()
+                    .setColor("Red")
+                    .setDescription("❌ Can not unsubscribe from unregistered user!")
+                ]
+                });
+            }
 
-                    return;
-                }
-
-                // Delete the whole channel if it's empty
-                if (Object.keys(mongo[channel]).length == 0)
-                {
-                    console.info("Channel empty, deleting (" + channel + ")...");
-                    delete mongo[channel];
-                }
+            // Delete the whole channel if it's empty
+            if (Object.keys(mongo[channel]).length == 0)
+            {
+                console.info("Channel empty, deleting (" + channel + ")...");
+                delete mongo[channel];
             }
 
             // Update the database (delete entry if empty)
