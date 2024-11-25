@@ -162,7 +162,11 @@ export default class Ready extends Event {
                                         var value;
                                         try {
                                             value = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
-                                            if (value.status == 400)
+                                        } catch (err) {
+                                            console.error(err);
+
+                                            //@ts-expect-error
+                                            if (err.response?.status == 400)
                                             {
                                                 const gChannel = this.client.channels.cache.get(channel) as TextChannel;
                                                 if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
@@ -208,8 +212,6 @@ export default class Ready extends Event {
                                                     console.error(err);
                                                 }
                                             }
-                                        } catch (err) {
-                                            console.error(`Axios responded with: ${err}`);
                                         }
 
                                         clearTimeout(timeoutId);

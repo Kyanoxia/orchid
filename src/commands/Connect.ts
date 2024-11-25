@@ -133,12 +133,14 @@ export default class Connect extends Command {
 
             for (const element of posts.data.feed)
             {
-                if (element.post.author.handle == username)
+                if (element.post.author.did == username)
                 {
                     const post = element.post;
 
                     // I don't know why I don't just use the premade functions to do this - it would be much easier and I could treat them as timecodes.
                     indexedAt = post.indexedAt.replace(/[^0-9]/g, '');
+
+                    console.info(post.indexedAt.replace(/[^0-9]/g, ''))
 
                     break;
                 }
@@ -147,6 +149,8 @@ export default class Connect extends Command {
                     indexedAt = 0;
                 }
             }
+
+            console.info(indexedAt);
             
             // Register subscriber for ease
             const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, message!, indexedAt, provider!, replies!, regex!);
