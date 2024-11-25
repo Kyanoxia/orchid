@@ -162,47 +162,54 @@ export default class Ready extends Event {
                                         var value;
                                         try {
                                             value = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
-                                        } catch (err) {
-                                            console.error(`Axios responded with: ${err}`);
-
-                                            const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                                            if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                                            if (value.status == 400)
                                             {
-                                                console.log(`Sending error message for ${user}...`);
-                                                try {
-                                                    await gChannel.send(`Something went wrong with user ID: \`${user}\`.  Please reconnect!`);
-                                                } catch (err) {
-                                                    const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+                                                const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                                                if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                                                {
+                                                    console.log(`Sending error message for ${user}...`);
                                                     try {
-                                                        await owner?.send({
+                                                        await gChannel.send({
                                                             embeds: [new EmbedBuilder()
                                                                 .setColor("Red")
-                                                                .setDescription(`❌ Unfortunately we were unable to get updates for the account: \`${user}\`.  Please reconnect it.`)
+                                                                .setDescription(`❌ Something went wrong with user: \`${user}\` (API error 400).  Please reconnect.`)
                                                             ]
                                                         });
                                                     } catch (err) {
-                                                        console.error(err);
+                                                        const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
+                                                        try {
+                                                            await owner?.send({
+                                                                embeds: [new EmbedBuilder()
+                                                                    .setColor("Red")
+                                                                    .setDescription(`❌ Something went wrong with user: \`${user}\` (API error 400).  Please reconnect.`)
+                                                                ]
+                                                            });
+                                                        } catch (err) {
+                                                            console.error(err);
+                                                        }
                                                     }
+                                                    console.log(`Sent error message for ${user}...`);
                                                 }
-                                                console.log(`Sent error message for ${user}...`);
-                                            }
 
-                                            // Delete problematic entry immediately, we do NOT need it.
-                                            delete props[channel][user];
+                                                // Delete problematic entry immediately, we do NOT need it.
+                                                delete props[channel][user];
 
-                                            // Delete the whole channel if it's empty
-                                            if (Object.keys(props[channel]).length == 0)
-                                            {
-                                                delete props[channel];
-                                            }
+                                                // Delete the whole channel if it's empty
+                                                if (Object.keys(props[channel]).length == 0)
+                                                {
+                                                    delete props[channel];
+                                                }
 
-                                            try {
-                                                console.info(`Updating database for ${guild}...`);
-                                                await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
-                                                console.log(`Updated Database for ${guild}`);
-                                            } catch (err) {
-                                                console.error(err);
+                                                try {
+                                                    console.info(`Updating database for ${guild}...`);
+                                                    await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
+                                                    console.log(`Updated Database for ${guild}`);
+                                                } catch (err) {
+                                                    console.error(err);
+                                                }
                                             }
+                                        } catch (err) {
+                                            console.error(`Axios responded with: ${err}`);
                                         }
 
                                         clearTimeout(timeoutId);
@@ -241,6 +248,7 @@ export default class Ready extends Event {
                                                     regex = regex != null ? regex : "";
                                                     var match = regex != "" ? this.toRegExp(regex!).test(post.record.text) : false;
 
+                                                    // Exclude for match
                                                     if (!match) {
                                                         try {
                                                             await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
