@@ -20,6 +20,7 @@ Please note that the Application utilizes third-party services that have their o
 
 *   [MongoDB](https://www.mongodb.com/legal/privacy/privacy-policy)
 *   [Discord](https://discord.com/privacy)
+*   [BlueSky](https://bsky.social/about/support/privacy-policy)
 
 The Service Provider may disclose User Provided and Automatically Collected Information:
 
