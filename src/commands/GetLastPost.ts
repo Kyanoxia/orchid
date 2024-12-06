@@ -1,4 +1,4 @@
-import { ApplicationCommandOptionType, ChatInputCommandInteraction, PermissionsBitField } from "discord.js";
+import { ApplicationCommandOptionType, ChatInputCommandInteraction, EmbedBuilder, PermissionsBitField } from "discord.js";
 import Command from "../base/classes/Command";
 import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
@@ -72,7 +72,12 @@ export default class GetLastPost extends Command {
             }
         } catch (err) {
             console.error(err);
-            await interaction.editReply({ content: "Unable to fetch data.  Please make sure everything is spelled correctly." })
+            await interaction.editReply({
+                embeds: [new EmbedBuilder()
+                    .setColor("Red")
+                    .setDescription("❌ Unable to fetch data.  Please make sure everything is spelled correctly.")
+                ]
+            })
         }
     }
 }
