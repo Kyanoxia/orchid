@@ -59,6 +59,7 @@ export default class Ready extends Event {
         // Main loop stuff
         this.StatusLoop();
         this.initJetstream(stream);
+        this.updateStreamDID(stream);
 
         //this.rebuildDB();
     }
@@ -163,6 +164,7 @@ export default class Ready extends Event {
             console.info("Got Database...");
 
             for (const i in db) {
+                console.info(db[i].did);
                 dids.push(db[i].did);
                 list[db[i].did] = db[i].props;
 
@@ -341,11 +343,6 @@ export default class Ready extends Event {
         })
 
         stream.start();
-
-        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-        await sleep(500);
-        this.updateStreamDID(stream);
     }
 
     // Helper function for commands
