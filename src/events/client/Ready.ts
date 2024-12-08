@@ -58,9 +58,9 @@ export default class Ready extends Event {
 
         // Main loop stuff
         this.StatusLoop();
-        //this.initJetstream(stream);
+        this.initJetstream(stream);
 
-        this.rebuildDB();
+        //this.rebuildDB();
     }
 
     async rebuildDB()

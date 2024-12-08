@@ -20,6 +20,8 @@ export default class CommandHandler extends Event {
 
         const command: Command = this.client.commands.get(interaction.commandName)!;
 
+        console.log("Received command: " + interaction.commandName);
+
         await interaction.deferReply({ephemeral: command.ephemeral});
 
         //@ts-expect-error
