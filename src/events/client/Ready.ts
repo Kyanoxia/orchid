@@ -4,7 +4,9 @@ import Event from "../../base/classes/Event";
 import Command from "../../base/classes/Command";
 import { configDotenv } from "dotenv";
 import SubscriberConfig from "../../base/schemas/SubscriberConfig";
+import SubscriberConfigv2 from "../../base/schemas/SubscriberConfigv2";
 import axios from "axios";
+import { Jetstream } from "@skyware/jetstream";
 
 export default class Ready extends Event {
     constructor(client: CustomClient)
@@ -41,9 +43,309 @@ export default class Ready extends Event {
             console.log(`Success: Successfully set ${devCommands.length} Developer Application (/) Commands`)
         }
 
+        // Register stream
+        const stream = new Jetstream({
+            endpoint: "wss://jetstream2.us-east.bsky.network/subscribe",
+        });
+
+        stream.on("open", async (event: any) => {
+            console.log("Jetstream connected.");
+        });
+
+        stream.on("error", async (event: any) => {
+            console.error("Something went wrong with the Jetstream\n", event)
+        })
+
         // Main loop stuff
         this.StatusLoop();
-        this.StartScanning();
+        //this.initJetstream(stream);
+
+        this.rebuildDB();
+    }
+
+    async rebuildDB()
+    {
+        const db = await SubscriberConfig.find({});
+
+        interface IDictionary {
+            [index: string]: Object;
+        }
+
+        var newDB = {} as IDictionary;
+        
+        // For every guild
+        for (const i in db)
+        {
+            const props = JSON.parse(db[i].props);
+
+            // Check every channel
+            for (const channel in props)
+            {
+                // And for every user in that channel
+                for (const user in props[channel])
+                {
+                    var did: string;
+                    try {
+                        // Get and set DID for user
+                        await new Promise(async (resolve, reject) => {
+                            const timeoutId = setTimeout(() => {
+                                reject(new Error(`Timed out request for ${user}`))
+                            }, 2000);
+
+                            var didReq;
+                            try {
+                                didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${user}`);
+
+                                //console.log(didReq.data.did);
+                                did = didReq.data.did;
+                            } catch (err) {
+                                console.error(err);
+
+                                //@ts-expect-error
+                                if (err.response?.status == 400)
+                                {
+                                    reject(new Error(`Invalid User`));
+                                }
+                            }
+
+                            clearTimeout(timeoutId);
+                            resolve(didReq);
+                        });
+
+                    } catch (err) {
+                        console.error(err);
+                        continue;
+                    }
+
+                    newDB[did!] = {
+                        ...newDB[did!],
+                        [channel]: {
+                            message: props[channel][user].message,
+                            replies: props[channel][user].replies,
+                            embed: props[channel][user].embedProvider,
+                            regex: props[channel][user].regex
+                        }
+                    }
+
+                    console.log(did!);
+                }
+            }
+        }
+
+        console.log(newDB);
+
+        for (const did in newDB)
+        {
+            if (!await SubscriberConfigv2.exists({ did: did }))
+            {
+                console.log("Updating database for: " + did);
+                await SubscriberConfigv2.create({ did: did, props: newDB[did] });
+            }
+        }
+
+        console.log("Finished Migrating Database");
+    }
+
+    async updateStreamDID(stream: Jetstream)
+    {
+        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+        console.log("Updating Stream DIDs");
+        try {
+            interface IDictionary {
+                [index: string]: Object;
+            }
+            var list = {} as IDictionary;
+            var dids: string[] = [];
+
+            console.info("Getting Database...");
+            const db = await SubscriberConfigv2.find({});
+            console.info("Got Database...");
+
+            for (const i in db) {
+                dids.push(db[i].did);
+                list[db[i].did] = db[i].props;
+
+                for (const did in list)
+                {
+                    try {
+                        await new Promise(async (resolve, reject) => {
+                            const timeoutId = setTimeout(() => {
+                                reject(new Error(`Timed out request for ${did}`))
+                            }, 2000);
+    
+                            var value;
+                            try {
+                                value = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}`);
+                            } catch (err) {
+                                console.error(err);
+    
+                                //@ts-expect-error
+                                if (err.response?.status == 400)
+                                {
+                                    for (const channel in list[did])
+                                    {
+                                        const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                                        if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                                        {
+                                            console.log(`Sending error message for ${did}...`);
+                                            try {
+                                                await gChannel.send({
+                                                    embeds: [new EmbedBuilder()
+                                                        .setColor("Red")
+                                                        .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
+                                                    ]
+                                                });
+                                            } catch (err) {
+                                                const owner = await gChannel.guild.fetchOwner()
+                                                try {
+                                                    await owner?.send({
+                                                        embeds: [new EmbedBuilder()
+                                                            .setColor("Red")
+                                                            .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
+                                                        ]
+                                                    });
+                                                } catch (err) {
+                                                    console.error(err);
+                                                }
+                                            }
+                                            console.log(`Sent error message for ${did}...`);
+                                        }
+                                    }
+
+                                    // Delete problematic entry (this will wipe out users who have not transitioned to DID if imported incorrectly from db migration)
+                                    delete list[did];
+                                    
+                                    for (const x in dids)
+                                    {
+                                        if (dids[x] == did)
+                                        {
+                                            delete dids[x];
+                                        }
+                                    }
+
+                                    await SubscriberConfigv2.deleteMany({ did: did });
+                                }
+                            }
+    
+                            clearTimeout(timeoutId);
+                            resolve(value);
+                        });
+                    } catch (err) {
+                        console.error(err);
+                        continue;
+                    }
+                }
+            }
+
+            console.log("Updating Jetstream \"wantedDids\"...")
+            stream.updateOptions({ wantedDids: dids });
+            console.log("Successfully updated Jetstream \"wantedDids\"...");
+        } catch (err) {
+            console.error(err);
+
+            await sleep(2500);
+            console.warn("Something went wrong. Calling updateStreamDID() again...");
+            this.updateStreamDID(stream);
+        }
+
+        await sleep(5000);
+        this.updateStreamDID(stream);
+    }
+
+    private async initJetstream(stream: Jetstream)
+    {
+        interface IDictionary {
+            [index: string]: Object;
+        }
+        var list = {} as IDictionary;
+
+        var did: string[] = [];
+
+        const db = await SubscriberConfigv2.find({});
+
+        for (const i in db) {
+            did.push(db[i].did);
+
+            list[db[i].did] = db[i].props;
+        }
+
+        stream.onCreate("app.bsky.feed.post", async (event) => {
+            for (const channel in list[event.did])
+            {
+                //@ts-expect-error
+                const regex = list[event.did][channel].regex === undefined || list[event.did][channel].regex == null ? "" : list[event.did][channel].regex;
+                //@ts-expect-error
+                const message = list[event.did][channel].message  === undefined || list[event.did][channel].message == null ? "" : list[event.did][channel].message == "" ? list[event.did][channel].message : list[event.did][channel].message + "\n";
+                //@ts-expect-error
+                const replies = list[event.did][channel].replies === undefined || list[event.did][channel].replies == null ? false : list[event.did][channel].replies;
+                //@ts-expect-error
+                const embed = list[event.did][channel].embed === undefined || list[event.did][channel].embed == null ? "bskye.app" : list[event.did][channel].embed;
+
+                try {
+                    const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                    if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                    {
+                        //@ts-expect-error
+                        var match = regex != "" ? this.toRegExp(regex!).test(event.commit.record.text) : false;
+                        var safe: boolean;
+
+                        if (event.commit.record.hasOwnProperty("reply"))
+                        {
+                            safe = replies;
+                        }
+                        else
+                        {
+                            safe = true;
+                        }
+
+                        // Exclude for match
+                        if (!match && safe) {
+                            console.info(`Sending announcement message for ${event.did}...`);
+                            try {
+                                await gChannel.send(`${message}https://${embed}/profile/${event.did}/post/${event.commit.rkey}`);
+                            } catch (err) {
+                                const owner = await (await gChannel.guild).fetchOwner()
+                                try {
+                                    await owner?.send({
+                                        embeds: [new EmbedBuilder()
+                                            .setColor("Red")
+                                            .setDescription("❌ Skycord tried to send an announcement but something went wrong!  Please make sure Skycord has necessary permissions, and try again.")
+                                        ]
+                                    });
+                                } catch (err) {
+                                    console.error(err);
+                                }
+                            }
+                            console.log(`Sent announcement message for ${event.did}...`);
+                        }
+                    }
+                    else
+                    {
+                        const owner = await (await gChannel.guild).fetchOwner()
+                        try {
+                            await owner?.send({
+                                embeds: [new EmbedBuilder()
+                                    .setColor("Red")
+                                    .setDescription("❌ Skycord tried to send an announcement but it doesn't have permission!  Please make sure Skycord has necessary permissions, and try again.")
+                                ]
+                            });
+                        } catch (err) {
+                            console.error(err);
+                        }
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+            }
+        })
+
+        stream.start();
+
+        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
+
+        await sleep(500);
+        this.updateStreamDID(stream);
     }
 
     // Helper function for commands
@@ -93,230 +395,5 @@ export default class Ready extends Event {
         } catch (err) {
             throw "Error while creating RegExp: " + err;
         }
-    }
-
-    private async StartScanning() {
-        const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
-
-        try {
-            console.log(`Getting Mongo Database...`);
-            const db = await SubscriberConfig.find({});
-            console.log(`Got Mongo Database...`);
-        
-            for (const i in db)
-            {
-                const props = JSON.parse(db[i].props);
-                const guild = db[i].guildID;
-
-                const guilds = Array.from(this.client.guilds.cache.map(guild => guild.id));
-
-                var postTime: string;
-                var embedProvider: string;
-                var replies: boolean;
-
-                // Delete document if we aren't in the guild anymore
-                if (!guilds.includes(guild))
-                {
-                    console.info(`No longer in guild ${guild}. Deleting document...`);
-                    try {
-                        console.log(`Deleting Guild Entry: ${guild}...`);
-                        await SubscriberConfig.deleteMany({ guildID: guild });
-                        console.log(`Deleted Guild Entry: ${guild}`);
-                    } catch (err) {
-                        console.error(err);
-                    }
-                    continue;
-                }
-
-                for (const channel in props)
-                {
-                    for (const user in props[channel])
-                    {
-                        var message = props[channel][user].message;
-                        var regex = props[channel][user].regex;
-                        const filterReplies: string = props[channel][user].replies ? "" : "&filter=posts_no_replies";
-
-                        replies = Object.keys(props[channel][user]).includes('replies') ? props[channel][user].replies : false;
-                        embedProvider = Object.keys(props[channel][user]).includes('embedProvider') ? props[channel][user].embedProvider : "bsky.app";
-
-                        props[channel][user].replies = replies;
-                        props[channel][user].embedProvider = embedProvider;
-
-                        if (message != "")
-                        {
-                            message = message + "\n";
-                        }
-                        
-                        try {
-                            console.info(`Sending request for ${user}...`);
-
-                            try {
-                                var posts;
-
-                                try {
-                                    posts = await new Promise(async (resolve, reject) => {
-                                        const timeoutId = setTimeout(() => {
-                                            reject(new Error(`Timed out request for ${user}`))
-                                        }, 2000);
-
-                                        var value;
-                                        try {
-                                            value = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${user}${filterReplies}`);
-                                        } catch (err) {
-                                            console.error(err);
-
-                                            //@ts-expect-error
-                                            if (err.response?.status == 400)
-                                            {
-                                                const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                                                if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
-                                                {
-                                                    console.log(`Sending error message for ${user}...`);
-                                                    try {
-                                                        await gChannel.send({
-                                                            embeds: [new EmbedBuilder()
-                                                                .setColor("Red")
-                                                                .setDescription(`❌ Something went wrong with user: \`${user}\` (API error 400).  Please reconnect.`)
-                                                            ]
-                                                        });
-                                                    } catch (err) {
-                                                        const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                                        try {
-                                                            await owner?.send({
-                                                                embeds: [new EmbedBuilder()
-                                                                    .setColor("Red")
-                                                                    .setDescription(`❌ Something went wrong with user: \`${user}\` (API error 400).  Please reconnect.`)
-                                                                ]
-                                                            });
-                                                        } catch (err) {
-                                                            console.error(err);
-                                                        }
-                                                    }
-                                                    console.log(`Sent error message for ${user}...`);
-                                                }
-
-                                                // Delete problematic entry immediately, we do NOT need it.
-                                                delete props[channel][user];
-
-                                                // Delete the whole channel if it's empty
-                                                if (Object.keys(props[channel]).length == 0)
-                                                {
-                                                    delete props[channel];
-                                                }
-
-                                                try {
-                                                    console.info(`Updating database for ${guild}...`);
-                                                    await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
-                                                    console.log(`Updated Database for ${guild}`);
-                                                } catch (err) {
-                                                    console.error(err);
-                                                }
-                                            }
-                                        }
-
-                                        clearTimeout(timeoutId);
-                                        resolve(value);
-                                    });
-                                } catch (err) {
-                                    console.error(err);
-                                    continue;
-                                }
-
-                                console.log(`Got response from ${user}...`);
-
-                                //@ts-expect-error
-                                for (const element of posts.data.feed)
-                                {
-                                    if (element.post.author.handle == user || element.post.author.did == user)
-                                    {
-                                        const post = element.post;
-                                        const postHead = post.uri.split("post/").pop();
-    
-                                        console.log(`Got recent post from: ${element.post.author.handle}`);
-    
-                                        postTime = post.indexedAt.replace(/[^0-9]/g, '');
-    
-                                        if (props[channel][user].indexedAt < postTime)
-                                        {
-                                            props[channel][user].indexedAt = postTime;
-                                            try {
-                                                const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                                                if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
-                                                {
-                                                    console.info(`Sending announcement message for ${user}...`);
-
-                                                    // If regex is empty then we aren't matching anything (duh)
-                                                    // We already sanitized during the connect process, so we don't need to check here
-                                                    regex = regex != null ? regex : "";
-                                                    var match = regex != "" ? this.toRegExp(regex!).test(post.record.text) : false;
-
-                                                    // Exclude for match
-                                                    if (!match) {
-                                                        try {
-                                                            await gChannel.send(`${message}https://${props[channel][user].embedProvider}/profile/${post.author.handle}/post/${postHead}`);
-                                                        } catch (err) {
-                                                            const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                                            try {
-                                                                await owner?.send({
-                                                                    embeds: [new EmbedBuilder()
-                                                                        .setColor("Red")
-                                                                        .setDescription("❌ Skycord tried to send an announcement but something went wrong!  Please make sure Skycord has necessary permissions, and try again.")
-                                                                    ]
-                                                                });
-                                                            } catch (err) {
-                                                                console.error(err);
-                                                            }
-                                                        }
-                                                        console.log(`Sent announcement message for ${user}...`);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    const owner = await (await this.client.guilds.fetch(guild)).fetchOwner()
-                                                    try {
-                                                        await owner?.send({
-                                                            embeds: [new EmbedBuilder()
-                                                                .setColor("Red")
-                                                                .setDescription("❌ Skycord tried to send an announcement but it doesn't have permission!  Please make sure Skycord has necessary permissions, and try again.")
-                                                            ]
-                                                        });
-                                                    } catch (err) {
-                                                        console.error(err);
-                                                    }
-                                                }
-                                            } catch (err) {
-                                                console.error(err);
-                                            }
-    
-                                            try {
-                                                console.info(`Updating database for ${guild}...`);
-                                                await SubscriberConfig.updateOne({ guildID: guild }, { $set: { 'props': JSON.stringify(props) }, $currentDate: { lastModified: true } });
-                                                console.log(`Updated Database for ${guild}`);
-                                            } catch (err) {
-                                                console.error(err);
-                                            }
-                                        }
-    
-                                        break;
-                                    }
-                                }
-                            } catch (err) {
-                                console.error(err)
-                            }
-                        } catch (err) {
-                            console.error(`Something went wrong fetching API data, but we'll try again on the next pass...`);
-                        }
-                        
-                        await sleep(60);
-                    }
-                }
-            }
-
-        } catch (err) {
-            console.error(err);
-        }
-
-        console.log(`Calling new loop...`);
-        this.StartScanning();
     }
 }

@@ -2,8 +2,8 @@ import { ApplicationCommandOptionType, ChatInputCommandInteraction, EmbedBuilder
 import Command from "../base/classes/Command";
 import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
-import SubscriberConfig from "../base/schemas/SubscriberConfig";
 import axios from "axios";
+import SubscriberConfigv2 from "../base/schemas/SubscriberConfigv2";
 
 export default class Disconnect extends Command {
     constructor(client: CustomClient) {
@@ -30,6 +30,11 @@ export default class Disconnect extends Command {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         const username = interaction.options.getString("username");
+        const channel = interaction.channelId;
+
+        interface IDictionary {
+            [index: string]: Object;
+        }
 
         var uid
         var number: number = 0;
@@ -37,7 +42,7 @@ export default class Disconnect extends Command {
         async function GetAPIData() {
             if (number >= 3) return;
             try {
-                console.log("Sending API request for UID");
+                console.log("Sending API request to get UID...");
     
                 uid = await new Promise<string>(async (resolve, reject) => {
                     const timeoutId = setTimeout(() => {
@@ -77,68 +82,50 @@ export default class Disconnect extends Command {
 
         console.info(`Unsubscribing from ${username} (${uid}) in ${interaction.guildId} / ${interaction.channelId}...`)
 
-        if (!await SubscriberConfig.exists({ guildID: interaction.guildId }))
+        if (!await SubscriberConfigv2.exists({ did: uid }))
         {
-            console.warn(`Cannot delete subscription in unregistered guild: ${interaction.guildId}`);
+            console.warn(`Cannot delete a subscription that doesn't exist!`);
             await interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor("Red")
-                .setDescription(`❌ Can not delete subscription in unregistered guild!`)
+                .setDescription(`❌ Can't unsubscribe from an unregistered user!`)
             ]
             });
         }
         else
         {
-            const db = await SubscriberConfig.find({ guildID: interaction.guildId });
-            var mongo = JSON.parse(db[0].props);
+            // Pull all the channels the user is in
+            const pulledData = await SubscriberConfigv2.findOne({ did: uid });
+            var channels = pulledData?.props as unknown as IDictionary;
 
-            var channel = interaction.channelId;
+            console.info("\n" + `Deleting ${uid} in channel ${channel}.` + "\n");
 
-            // Check if our subscription is present and delete it
-            if (mongo[channel][uid!])
+            // If it's not subbed to our channel
+            if (!channels.hasOwnProperty(channel))
             {
-                console.info("DID found (deleting entry): " + uid);
-                delete mongo[channel][uid!];
-            }
-            else if (mongo[channel][username!])
-            {
-                console.info("Username found (deleting entry): " + username);
-                delete mongo[channel][username!];
-            }
-            else
-            {
-                console.warn("User not found: " + uid + " " + username);
                 await interaction.editReply({ embeds: [new EmbedBuilder()
                     .setColor("Red")
-                    .setDescription("❌ Can not unsubscribe from unregistered user!")
+                    .setDescription(`❌ Can't unsubscribe from an unregistered user!`)
                 ]
                 });
+
+                return;
             }
 
-            // Delete the whole channel if it's empty
-            if (Object.keys(mongo[channel]).length == 0)
-            {
-                console.info("Channel empty, deleting (" + channel + ")...");
-                delete mongo[channel];
-            }
+            console.info(channels);
 
-            // Update the database (delete entry if empty)
-            if (Object.keys(mongo).length == 0)
+            // Delete our channel
+            delete channels[channel];
+
+            console.info(channels);
+
+            console.info("Pushing changes to database...");
+            console.info(uid);
+            await SubscriberConfigv2.updateOne({ did: uid }, { props: channels });
+
+            if (Object.keys(channels).length == 0)
             {
-                console.log(`No more subscriptions found in ${interaction.guildId}. Deleting document...`);
-                try {
-                    await SubscriberConfig.deleteMany({ guildID: interaction.guildId });
-                } catch (err) {
-                    console.error(err);
-                }
-            }
-            else
-            {
-                console.log(`Updating information for ${interaction.guildId}`);
-                try {
-                    await SubscriberConfig.updateOne({ guildID: interaction.guildId }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } });
-                } catch (err) {
-                    console.error(err);
-                }
+                console.info(`User ${uid} no longer has channels subscribed to them. Deleting database entry...`);
+                await SubscriberConfigv2.deleteOne({ did: uid });
             }
 
             await interaction.editReply({ embeds: [new EmbedBuilder()
@@ -147,7 +134,7 @@ export default class Disconnect extends Command {
             ]
             });
 
-            console.log(`Unsubscribed from user ${username} in ${interaction.guildId} / ${interaction.channelId}`);
+            console.info(`Unsubscribed from ${uid} in ${interaction.channelId}`);
         }
     }
 }

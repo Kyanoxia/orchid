@@ -5,6 +5,7 @@ import Category from "../base/enums/Category";
 import Subscriber from "../base/classes/Subscriber";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
 import axios from "axios";
+import SubscriberConfigv2 from "../base/schemas/SubscriberConfigv2";
 
 export default class Connect extends Command {
     constructor(client: CustomClient) {
@@ -78,7 +79,7 @@ export default class Connect extends Command {
         provider = provider != null ? provider : "bskye.app";
         replies = replies != null ? replies : false;
 
-        const filterReplies: string = replies ? "" : "&filter=posts_no_replies";
+        const channel = interaction.channelId;
 
         // String to regex
         function toRegExp(string: string): RegExp {
@@ -121,124 +122,44 @@ export default class Connect extends Command {
         try {
             const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
             username = didReq.data.did;
+            console.log(username);
         } catch (err) {
             console.error(err);
         }
 
-        // Get latest post
+        interface IDictionary {
+            [index: string]: Object;
+        }
+
+        const data = {} as IDictionary;
+
+        data[channel] = {
+            message: message,
+            replies: replies,
+            embed: provider,
+            regex: regex
+        }
+
         try {
-            const posts = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${username}${filterReplies}`);
-
-            var indexedAt;
-
-            for (const element of posts.data.feed)
+            console.log("Subscribing to " + username + " in " + channel);
+            // Create user if not already
+            if (!await SubscriberConfigv2.exists({ did: username }))
             {
-                if (element.post.author.did == username)
-                {
-                    const post = element.post;
-
-                    // I don't know why I don't just use the premade functions to do this - it would be much easier and I could treat them as timecodes.
-                    indexedAt = post.indexedAt.replace(/[^0-9]/g, '');
-
-                    console.info(post.indexedAt.replace(/[^0-9]/g, ''))
-
-                    break;
-                }
-                else
-                {
-                    indexedAt = 0;
-                }
-            }
-
-            console.info(indexedAt);
-            
-            // Register subscriber for ease
-            const sub = new Subscriber(interaction.guildId!, interaction.channelId, username!, message!, indexedAt, provider!, replies!, regex!);
-
-            // If our guild isn't registered, register it
-            if (!await SubscriberConfig.exists({ guildID: sub.guild }))
-            {
-                console.info(`Subscribing to ${sub.username} in guild: ${sub.guild}...`);
-                await SubscriberConfig.create({ guildID: sub.guild, props: JSON.stringify(sub.toJSON())}).then(() => { console.log(`Subscribed to ${sub.username} in ${sub.guild} / ${sub.channel} with replies: ${replies} and embed provider: ${provider}`)})
+                console.log("User not registered yet. Creating entry now...");
+                await SubscriberConfigv2.create({ did: username, props: data });
+                console.info("Created entry");
             }
             else
             {
-                const db = await SubscriberConfig.find({ guildID: sub.guild });
-                var mongo = JSON.parse(db[0].props);
+                // Pull all the channels
+                const pulledData = await SubscriberConfigv2.findOne({ did: username });
+                var channels = pulledData?.props as unknown as IDictionary;
 
-                var channelPresent: boolean = false;
-                // Check if our channel is present
-                for (var channel in mongo)
-                {
-                    // If we find ours
-                    if (channel == sub.channel)
-                    {
-                        channelPresent = true;
-                        
-                        var subPresent: boolean = false;
-                        // Check if our sub is present
-                        for (var user in mongo[channel])
-                        {
-                            if (user == sub.username)
-                            {
-                                subPresent = true;
+                // Update ours to new data
+                channels[channel] = data[channel];
 
-                                // Update the sub (we're pushing anyways)
-                                mongo[channel][user] = {
-                                    message: sub.message,
-                                    indexedAt: mongo[channel][user].indexedAt,
-                                    embedProvider: sub.embedProvider,
-                                    replies: sub.replies,
-                                    regex: sub.regex
-                                }
-
-                                // Stop checking (duh)
-                                break;
-                            }
-                        }
-
-                        if (!subPresent)
-                        {
-                            // Add it to the channel
-                            mongo[channel] = {
-                                ...mongo[channel],
-                                [sub.username]:
-                                {
-                                    message: sub.message,
-                                    indexedAt: sub.indexedAt,
-                                    embedProvider: sub.embedProvider,
-                                    replies: sub.replies,
-                                    regex: sub.regex
-                                }
-                            }
-                        }
-
-                        // Don't check any more
-                        break;
-                    }
-                }
-
-                if (!channelPresent)
-                {
-                    // Register a subscriber to the channel
-                    mongo = {
-                        ...mongo,
-                        [sub.channel]:
-                        {
-                            [sub.username]:
-                            {
-                                message: sub.message,
-                                indexedAt: sub.indexedAt,
-                                embedProvider: sub.embedProvider,
-                                replies: sub.replies,
-                                regex: sub.regex
-                            }
-                        }
-                    }
-                }
-
-                // Update the database
-                SubscriberConfig.updateOne({ guildID: sub.guild }, { $set: { 'props': JSON.stringify(mongo) }, $currentDate: { lastModified: true } }).catch();
+                // Push to db
+                await SubscriberConfigv2.updateOne({ did: username }, { props: channels });
             }
 
             await interaction.editReply({ embeds: [new EmbedBuilder()
@@ -248,6 +169,7 @@ export default class Connect extends Command {
             ]
             });
         } catch (err) {
+            console.error(err);
             await interaction.editReply({
                 embeds: [new EmbedBuilder()
                     .setColor("Red")

@@ -4,6 +4,7 @@ import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
 import axios from "axios";
+import SubscriberConfigv2 from "../base/schemas/SubscriberConfigv2";
 
 export default class GetDatabase extends Command {
     constructor(client: CustomClient) {
@@ -22,24 +23,35 @@ export default class GetDatabase extends Command {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         var message: string = "";
-        const db = await SubscriberConfig.find({ guildID: interaction.guildId });
-        for (const element in db)
-        {
-            const props = JSON.parse(db[element].props);
-            const channel = interaction.channelId;
-            var sub: string = "- ";
+        const channel = interaction.channelId;
 
-            for (const user in props[channel])
+        var users: string[] = [];
+
+        interface IDictionary {
+            [index: string]: Object;
+        }
+
+        // Pull all the channels
+        const pulledData = await SubscriberConfigv2.find({});
+
+        for (const i in pulledData)
+        {
+            var channels = pulledData[i].props as unknown as IDictionary;
+
+            if (channels.hasOwnProperty(channel))
             {
                 var username;
+                const did = pulledData[i].did;
                 try {
-                    const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${user}`);
+                    const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${did}`);
                     username = didReq.data.handle;
                 } catch (err) {
                     console.error(err);
                 }
 
-                message = message + sub + ("`" + user + "`" + " (" + username + ")" + ":\n" + "Embeds by `" + props[channel][user].embedProvider + "` - Replies? `" + props[channel][user].replies + "`\n");
+                users.push(pulledData[i].did);
+                //@ts-expect-error
+                message += "- " + ("`" + pulledData[i].did + "`" + " (" + username + ")" + ":\n" + "Embeds by `" + channels[channel].embed + "` - Replies? `" + channels[channel].replies + "`\n" + "> `" + (channels[channel].regex == "" ? "No Regex" : channels[channel].regex) + "`\n");
             }
         }
 
