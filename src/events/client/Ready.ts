@@ -246,12 +246,10 @@ export default class Ready extends Event {
         } catch (err) {
             console.error(err);
 
-            await sleep(2500);
             console.warn("Something went wrong. Calling updateStreamDID() again...");
             this.updateStreamDID(stream);
         }
 
-        await sleep(5000);
         this.updateStreamDID(stream);
     }
 
