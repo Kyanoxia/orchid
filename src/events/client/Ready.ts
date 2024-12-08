@@ -179,6 +179,7 @@ export default class Ready extends Event {
                             var value;
                             try {
                                 value = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}`);
+                                console.log("Got validity request");
                             } catch (err) {
                                 console.error(err);
     
