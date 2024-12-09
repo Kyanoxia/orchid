@@ -1,7 +1,7 @@
 {
-  "name": "skycord",
+  "name": "orchid",
   "version": "2.0.0",
-  "description": "Bluesky Discord bot",
+  "description": "Gracefully bridge Bluesky accounts to Discord channels",
   "main": "index.js",
   "scripts": {
     "clean": "rm -rf build",
