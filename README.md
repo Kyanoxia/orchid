@@ -1,4 +1,4 @@
-﻿# Skycord
+﻿# Orchid
 Gracefully connect your Bluesky account to any Discord channel
 
 <sup>currently limited to non-nsfw until May 1 2025</sup>
