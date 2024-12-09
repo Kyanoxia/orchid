@@ -7,6 +7,7 @@ import SubscriberConfig from "../../base/schemas/SubscriberConfig";
 import SubscriberConfigv2 from "../../base/schemas/SubscriberConfigv2";
 import axios from "axios";
 import { Jetstream } from "@skyware/jetstream";
+import { atInfo } from "../../base/utility/atproto";
 
 export default class Ready extends Event {
     constructor(client: CustomClient)
@@ -59,7 +60,6 @@ export default class Ready extends Event {
         // Main loop stuff
         this.StatusLoop();
         this.initJetstream(stream);
-        this.updateStreamDID(stream);
 
         //this.rebuildDB();
     }
@@ -151,12 +151,13 @@ export default class Ready extends Event {
     {
         const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
+        interface IDictionary {
+            [index: string]: Object;
+        }
+
         console.log("Updating Stream DIDs");
         try {
-            interface IDictionary {
-                [index: string]: Object;
-            }
-            var list = {} as IDictionary;
+            var localCache = {} as IDictionary;
             var dids: string[] = [];
 
             console.info("Getting Database...");
@@ -164,81 +165,56 @@ export default class Ready extends Event {
             console.info("Got Database...");
 
             for (const i in db) {
-                console.info(db[i].did);
-                dids.push(db[i].did);
-                list[db[i].did] = db[i].props;
+                const did = db[i].did;
 
-                for (const did in list)
-                {
-                    try {
-                        await new Promise(async (resolve, reject) => {
-                            const timeoutId = setTimeout(() => {
-                                reject(new Error(`Timed out request for ${did}`))
-                            }, 2000);
-    
-                            var value;
+                dids.push(did);
+                localCache[did] = db[i].props;
+
+                try {
+                    console.info("Sending request to ATProto for " + did);
+                    atInfo(did); // Will throw if invalid
+                    console.log("Got validity request");
+                } catch (err) {
+                    console.error(err);
+
+                    for (const channel in localCache[did])
+                    {
+                        const gChannel = this.client.channels.cache.get(channel) as TextChannel;
+                        if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                        {
+                            console.log(`Sending error message for ${did}...`);
                             try {
-                                value = await axios.get(`https://api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=${did}`);
-                                console.log("Got validity request");
+                                await gChannel.send({
+                                    embeds: [new EmbedBuilder()
+                                        .setColor("Red")
+                                        .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
+                                    ]
+                                });
+
+                                console.log(`Sent error message for ${did}...`);
                             } catch (err) {
-                                console.error(err);
-    
-                                //@ts-expect-error
-                                if (err.response?.status == 400)
-                                {
-                                    for (const channel in list[did])
-                                    {
-                                        const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                                        if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
-                                        {
-                                            console.log(`Sending error message for ${did}...`);
-                                            try {
-                                                await gChannel.send({
-                                                    embeds: [new EmbedBuilder()
-                                                        .setColor("Red")
-                                                        .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
-                                                    ]
-                                                });
-                                            } catch (err) {
-                                                const owner = await gChannel.guild.fetchOwner()
-                                                try {
-                                                    await owner?.send({
-                                                        embeds: [new EmbedBuilder()
-                                                            .setColor("Red")
-                                                            .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
-                                                        ]
-                                                    });
-                                                } catch (err) {
-                                                    console.error(err);
-                                                }
-                                            }
-                                            console.log(`Sent error message for ${did}...`);
-                                        }
-                                    }
+                                const owner = await gChannel.guild.fetchOwner()
+                                try {
+                                    await owner?.send({
+                                        embeds: [new EmbedBuilder()
+                                            .setColor("Red")
+                                            .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
+                                        ]
+                                    });
 
-                                    // Delete problematic entry (this will wipe out users who have not transitioned to DID if imported incorrectly from db migration)
-                                    delete list[did];
-                                    
-                                    for (const x in dids)
-                                    {
-                                        if (dids[x] == did)
-                                        {
-                                            delete dids[x];
-                                        }
-                                    }
-
-                                    await SubscriberConfigv2.deleteMany({ did: did });
+                                    console.log(`Sent error message in DMs for ${did}...`);
+                                } catch (err) {
+                                    console.error(err);
                                 }
                             }
-    
-                            clearTimeout(timeoutId);
-                            resolve(value);
-                        });
-                    } catch (err) {
-                        console.error(err);
-                        continue;
+                        }
                     }
+
+                    // Delete problematic entry (this will wipe out users who have not transitioned to DID if imported incorrectly from db migration)
+                    dids = dids.filter((element) => element !== did);
+                    await SubscriberConfigv2.deleteMany({ did: did });
                 }
+                await sleep(100);
             }
 
             console.log("Updating Jetstream \"wantedDids\"...")
@@ -275,13 +251,13 @@ export default class Ready extends Event {
             for (const channel in list[event.did])
             {
                 //@ts-expect-error
-                const regex = list[event.did][channel].regex === undefined || list[event.did][channel].regex == null ? "" : list[event.did][channel].regex;
+                const regex = list[event.did][channel].regex == undefined || list[event.did][channel].regex == null ? "" : list[event.did][channel].regex;
                 //@ts-expect-error
-                const message = list[event.did][channel].message  === undefined || list[event.did][channel].message == null ? "" : list[event.did][channel].message == "" ? list[event.did][channel].message : list[event.did][channel].message + "\n";
+                const message = list[event.did][channel].message  == undefined || list[event.did][channel].message == null ? "" : list[event.did][channel].message == "" ? list[event.did][channel].message : list[event.did][channel].message + "\n";
                 //@ts-expect-error
-                const replies = list[event.did][channel].replies === undefined || list[event.did][channel].replies == null ? false : list[event.did][channel].replies;
+                const replies = list[event.did][channel].replies == undefined || list[event.did][channel].replies == null ? false : list[event.did][channel].replies;
                 //@ts-expect-error
-                const embed = list[event.did][channel].embed === undefined || list[event.did][channel].embed == null ? "bskye.app" : list[event.did][channel].embed;
+                const embed = list[event.did][channel].embed == undefined || list[event.did][channel].embed == null ? "bskye.app" : list[event.did][channel].embed;
 
                 try {
                     const gChannel = this.client.channels.cache.get(channel) as TextChannel;
@@ -342,6 +318,8 @@ export default class Ready extends Event {
         })
 
         stream.start();
+
+        await this.updateStreamDID(stream);
     }
 
     // Helper function for commands

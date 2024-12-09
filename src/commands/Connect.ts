@@ -6,6 +6,7 @@ import Subscriber from "../base/classes/Subscriber";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
 import axios from "axios";
 import SubscriberConfigv2 from "../base/schemas/SubscriberConfigv2";
+import { atInfo } from "../base/utility/atproto";
 
 export default class Connect extends Command {
     constructor(client: CustomClient) {
@@ -33,7 +34,7 @@ export default class Connect extends Command {
                 },
                 {
                     name: "provider",
-                    description: "The embed provider you wish to use (Recommended: Bskye)",
+                    description: "The embed provider you wish to use",
                     required: false,
                     type: ApplicationCommandOptionType.String,
                     choices: [
@@ -74,11 +75,6 @@ export default class Connect extends Command {
         var replies = interaction.options.getBoolean("replies");
         var regex = interaction.options.getString("regex");
 
-        // Default options because I don't want to store null in the db
-        message = message != null ? message : "";
-        provider = provider != null ? provider : "bskye.app";
-        replies = replies != null ? replies : false;
-
         const channel = interaction.channelId;
 
         // String to regex
@@ -113,16 +109,12 @@ export default class Connect extends Command {
                 return;
             }
         }
-        else
-        {
-            regex = "";
-        }
 
         // Get user's DID
         try {
-            const didReq = await axios.get(`https://api.bsky.app/xrpc/app.bsky.actor.getProfile?actor=${username}`);
-            username = didReq.data.did;
-            console.log(username);
+            const _did = await atInfo(username!);
+            //@ts-expect-error
+            username = _did.did;
         } catch (err) {
             console.error(err);
         }
@@ -131,20 +123,21 @@ export default class Connect extends Command {
             [index: string]: Object;
         }
 
-        const data = {} as IDictionary;
-
-        data[channel] = {
-            message: message,
-            replies: replies,
-            embed: provider,
-            regex: regex
-        }
-
         try {
             console.log("Subscribing to " + username + " in " + channel);
             // Create user if not already
             if (!await SubscriberConfigv2.exists({ did: username }))
             {
+                // Create an empty object and populate it
+                const data = {} as IDictionary;
+
+                data[channel] = {
+                    message: message  == null ? ""         : message,
+                    replies: replies  == null ? false      : replies,
+                    embed:   provider == null ? "bsky.app" : provider,
+                    regex:   regex    == null ? ""         : regex
+                }
+
                 console.log("User not registered yet. Creating entry now...");
                 await SubscriberConfigv2.create({ did: username, props: data });
                 console.info("Created entry");
@@ -155,11 +148,18 @@ export default class Connect extends Command {
                 const pulledData = await SubscriberConfigv2.findOne({ did: username });
                 var channels = pulledData?.props as unknown as IDictionary;
 
-                // Update ours to new data
-                channels[channel] = data[channel];
+                // Update it
+                channels[channel] = {
+                    message: message  == null ? ""         : message,
+                    replies: replies  == null ? false      : replies,
+                    embed:   provider == null ? "bsky.app" : provider,
+                    regex:   regex    == null ? ""         : regex
+                }
 
                 // Push to db
+                console.log("Updating ", username);
                 await SubscriberConfigv2.updateOne({ did: username }, { props: channels });
+                console.log("Updated ", username);
             }
 
             await interaction.editReply({ embeds: [new EmbedBuilder()
