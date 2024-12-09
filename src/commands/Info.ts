@@ -29,11 +29,6 @@ export default class Info extends Command {
                     type: ApplicationCommandOptionType.Subcommand
                 },
                 {
-                    name: "getlastpost",
-                    description: "List info for /getlastpost",
-                    type: ApplicationCommandOptionType.Subcommand
-                },
-                {
                     name: "help",
                     description: "List info for /help",
                     type: ApplicationCommandOptionType.Subcommand

@@ -1,5 +1,5 @@
 import CustomClient from "./base/classes/CustomClient";
-import { atInfo } from "./base/utility/atproto";
+import { atInfo, getDIDValidity, getHandleValidity, isValid } from "./base/utility/atproto";
 
 // #################### TIMESTAMP LOGS #################### //
 var log = console.log;

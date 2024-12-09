@@ -33,9 +33,6 @@ export default class Help extends Command {
                         > **\`/disconnect\`**
                         > Disconnect a user account
 
-                        > **\`/getlastpost\`**
-                        > Get last post of a user account (excluding reposts and replies)
-
                         > **\`/help\`**
                         > Display the help dialogue
 
@@ -44,7 +41,6 @@ export default class Help extends Command {
                         > - **\`/info botinfo\`**
                         > - **\`/info connect\`**
                         > - **\`/info disconnect\`**
-                        > - **\`/info getlastpost\`**
                         > - **\`/info help\`**
                         > - **\`/info list\`**
                          

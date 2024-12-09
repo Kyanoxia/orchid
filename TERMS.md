@@ -15,4 +15,4 @@ General conditions regarding Skycord are under this topic.
 4. Skycord's team reserves the rights to prohibit any server or user from using Skycord.
 5. The client is responsible for any violation caused by them.
 6. We have the rights to update terms of service anytime with a notice in the support server, available [here](https://kyanoxia.com/join).
-7. The client must follow the license outlined [here](https://github.com/Kyanoxia/skycord/blob/main/LICENSE).
+7. The client must follow the license outlined [here](https://github.com/Kyanoxia/orchid/blob/main/LICENSE).

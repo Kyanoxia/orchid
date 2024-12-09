@@ -7,7 +7,7 @@ import SubscriberConfig from "../../base/schemas/SubscriberConfig";
 import SubscriberConfigv2 from "../../base/schemas/SubscriberConfigv2";
 import axios from "axios";
 import { Jetstream } from "@skyware/jetstream";
-import { atInfo } from "../../base/utility/atproto";
+import { atInfo, getDIDValidity, isValid } from "../../base/utility/atproto";
 
 export default class Ready extends Event {
     constructor(client: CustomClient)
@@ -51,22 +51,11 @@ export default class Ready extends Event {
 
         stream.on("open", async (event: any) => {
             console.log("Jetstream connected.");
+            this.updateStreamDID(stream)
         });
 
         stream.on("error", async (event: any) => {
             console.error("Something went wrong with the Jetstream\n", event);
-
-            try {
-                stream.close();
-            } catch (err) {
-                console.error(err);
-            }
-
-            const newStream = new Jetstream({
-                endpoint: "wss://jetstream2.us-east.bsky.network/subscribe",
-            });
-
-            this.initJetstream(newStream);
         })
 
         // Main loop stuff
@@ -182,13 +171,9 @@ export default class Ready extends Event {
                 dids.push(did);
                 localCache[did] = db[i].props;
 
-                try {
-                    console.info("Sending request to ATProto for " + did);
-                    atInfo(did); // Will throw if invalid
-                    console.log("Got validity request");
-                } catch (err) {
-                    console.error(err);
-
+                console.info("Sending request to ATProto for " + did);
+                if (!(await getDIDValidity(did)))
+                {
                     for (const channel in localCache[did])
                     {
                         const gChannel = this.client.channels.cache.get(channel) as TextChannel;
@@ -202,7 +187,7 @@ export default class Ready extends Event {
                                         .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
                                     ]
                                 });
-
+    
                                 console.log(`Sent error message for ${did}...`);
                             } catch (err) {
                                 const owner = await gChannel.guild.fetchOwner()
@@ -213,7 +198,7 @@ export default class Ready extends Event {
                                             .setDescription(`❌ Something went wrong with user: \`${did}\` (API error 400).  Please reconnect.`)
                                         ]
                                     });
-
+    
                                     console.log(`Sent error message in DMs for ${did}...`);
                                 } catch (err) {
                                     console.error(err);
@@ -221,22 +206,27 @@ export default class Ready extends Event {
                             }
                         }
                     }
-
+    
                     // Delete problematic entry (this will wipe out users who have not transitioned to DID if imported incorrectly from db migration)
                     dids = dids.filter((element) => element !== did);
                     await SubscriberConfigv2.deleteMany({ did: did });
                 }
+
+                if (stream.ws?.readyState !== WebSocket.OPEN)
+                {
+                    stream.start();
+                }
+                
                 await sleep(100);
             }
+
+            console.log(stream.ws?.readyState === WebSocket.OPEN ? "Jetstream Websocket Status: Open" : "Jetstream Websocket Status: Closed");
 
             console.log("Updating Jetstream \"wantedDids\"...")
             stream.updateOptions({ wantedDids: dids });
             console.log("Successfully updated Jetstream \"wantedDids\"...");
         } catch (err) {
             console.error(err);
-
-            console.warn("Something went wrong. Calling updateStreamDID() again...");
-            this.updateStreamDID(stream);
         }
 
         this.updateStreamDID(stream);
@@ -330,8 +320,6 @@ export default class Ready extends Event {
         })
 
         stream.start();
-
-        await this.updateStreamDID(stream);
     }
 
     // Helper function for commands

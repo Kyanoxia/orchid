@@ -1,6 +1,6 @@
 module.exports = {
   apps : [{
-    name   : "skycord",
+    name   : "orchid",
     script: "./build/index.js",
     watch: true
   }]

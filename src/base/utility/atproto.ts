@@ -12,21 +12,107 @@ export async function atInfo(input: string): Promise<object>
 
         if (did == undefined)
         {
-            throw new Error('undefined did returned from handle');
+            throw new Error('Invalid user ' + input + ' - result is undefined');
         }
+        else
+        {
+            const data = await didres.resolveAtprotoData(did);
 
-        const data = await didres.resolveAtprotoData(did);
-
-        if (data.handle != input) {
-            throw new Error('invalid handle (did not match DID document)');
+            console.log(data);
+            return data;
         }
+    }
+    else
+    {
+        const did = await didres.resolve(input);
 
-        return data;
+        if (did?.id == undefined)
+        {
+            throw new Error('Invalid user ' + input + ' - result is undefined');
+        }
+        else
+        {
+            const data = await didres.resolveAtprotoData(did?.id);
+
+            return data;
+        }
+    }
+}
+
+export async function isValid(input: string): Promise<boolean>
+{
+    const didres = new DidResolver({});
+    const hdlres = new HandleResolver({});
+
+    if (isValidHandle(input))
+    {
+        const did = await hdlres.resolve(input);
+
+        if (did == undefined)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else
+    {
+        const did = await didres.resolve(input);
+
+        if (did == undefined)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+}
+
+export async function getHandleValidity(input: string): Promise<boolean>
+{
+    const hdlres = new HandleResolver({});
+
+    if (isValidHandle(input))
+    {
+        const did = await hdlres.resolve(input);
+
+        if (did == undefined)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
+    }
+    else
+    {
+        return false;
+    }
+}
+
+export async function getDIDValidity(input: string): Promise<boolean>
+{
+    const didres = new DidResolver({});
+
+    try {
+        ensureValidDid(input);
+    } catch (err) {
+        return false;
     }
 
-    ensureValidDid(input);
+    const did = await didres.resolve(input);
 
-    const data = await didres.resolveAtprotoData(input);
-
-    return data;
+    if (did?.id == undefined)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }

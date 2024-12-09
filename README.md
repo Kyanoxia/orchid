@@ -1,7 +1,9 @@
 ﻿# Skycord
-A Discord bot to announce new posts from Bluesky!
+Gracefully connect your Bluesky account to any Discord channel
 
-<img src="https://github.com/Kyanoxia/skycord/blob/main/assets/SkycordGithub.png" alt="skycord banner" width="100%"/>
+<sup>currently limited to non-nsfw until May 1 2025</sup>
+
+<img src="https://github.com/Kyanoxia/skycord/blob/main/assets/SocialHero.png" alt="orchid banner" width="100%"/>
 
 <p align="center">
   <a href='https://ko-fi.com/kyanoxia'><img src='https://img.shields.io/badge/Buy%20Me%20a%20Coffee!-whitesmoke?style=for-the-badge&logo=kofi&logoColor=whitesmoke&labelColor=dimgray&color=dimgray' alt='Buy Me a Coffee at ko-fi.com' /></a>
@@ -18,7 +20,6 @@ To start, please invite the bot to your server using [this URL](https://discord.
 | `/botinfo`            | (global) Display information about Skycord  | `/botinfo`                                                         |
 | `/connect`            | Connect your BlueSky account                | `/connect <handle> [embed provider] [replies] [message] [regex]`   |
 | `/disconnect`         | Disconnect your BlueSky account             | `/disconnect <handle>`                                             |
-| `/getlastpost`        | (global) Get the latest post from a user    | `/getlastpost <handle>`                                            |
 | `/help`               | Display help page                           | `/help`                                                            |
 | `/info`               | Display information about a command         | `/info <subcommand>`                                               |
 | `/list`               | Display subscribed users in channel         | `/list`                                                            |
@@ -35,12 +36,12 @@ Now that that's out of the way, let's get to it.
 
 Clone this repository:
 ```
-git clone https://github.com/Kyanoxia/bluecord.git
+git clone https://github.com/Kyanoxia/orchid.git
 ```
 
 Travel into that directory:
 ```
-cd bluecord
+cd orchid
 ```
 
 Install Dependencies:

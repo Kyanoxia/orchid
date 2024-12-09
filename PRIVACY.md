@@ -6,7 +6,8 @@ This privacy policy applies to the Skycord app (hereby referred to as "Applicati
 
 The Application collects information when you add and use it. This information may include information such as
 
-*   Your server's Identifiers (e.g. Guild IDs, Channel IDs, and Server Owner ID)
+*   Your server's Identifiers (e.g. Channel IDs, Server Owner ID, etc.)
+*   ATProto Identifiers (e.g. DIDs, Handles, TIDs, etc.)
 
 The Service Provider may use the information you provided to contact you from time to time to provide you with important information, required notices and marketing promotions.
 

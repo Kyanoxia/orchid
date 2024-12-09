@@ -3,6 +3,7 @@ import Command from "../base/classes/Command";
 import CustomClient from "../base/classes/CustomClient";
 import Category from "../base/enums/Category";
 import SubscriberConfig from "../base/schemas/SubscriberConfig";
+import SubscriberConfigv2 from "../base/schemas/SubscriberConfigv2";
 
 export default class GetDatabase extends Command {
     constructor(client: CustomClient) {
@@ -21,7 +22,7 @@ export default class GetDatabase extends Command {
 
     async Execute(interaction: ChatInputCommandInteraction) {
         try {
-            const db = await SubscriberConfig.find({})
+            const db = await SubscriberConfigv2.find({})
             for (const element in db)
             {
                 console.log(element);
