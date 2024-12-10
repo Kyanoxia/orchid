@@ -8,6 +8,7 @@ import SubscriberConfigv2 from "../../base/schemas/SubscriberConfigv2";
 import axios from "axios";
 import { Jetstream } from "@skyware/jetstream";
 import { atInfo, getDIDValidity, isValid } from "../../base/utility/atproto";
+import { ensureValidDid } from "@atproto/syntax";
 
 export default class Ready extends Event {
     constructor(client: CustomClient)
@@ -51,11 +52,16 @@ export default class Ready extends Event {
 
         stream.on("open", async (event: any) => {
             console.log("Jetstream connected.");
-            this.updateStreamDID(stream)
         });
 
         stream.on("error", async (event: any) => {
             console.error("Something went wrong with the Jetstream\n", event);
+
+            try {
+                stream.close();
+            } catch (err) {
+                console.error(err);
+            }
 
             // Register stream
             const _stream = new Jetstream({
@@ -248,12 +254,13 @@ export default class Ready extends Event {
         this.updateStreamDID(stream);
     }
 
-    private async initJetstream(stream: Jetstream)
+    async initJetstream(stream: Jetstream)
     {
         interface IDictionary {
             [index: string]: Object;
         }
-        var list = {} as IDictionary;
+
+        var lst = {} as IDictionary;
 
         var did: string[] = [];
 
@@ -262,20 +269,39 @@ export default class Ready extends Event {
         for (const i in db) {
             did.push(db[i].did);
 
-            list[db[i].did] = db[i].props;
+            lst[db[i].did] = db[i].props;
         }
 
         stream.onCreate("app.bsky.feed.post", async (event) => {
-            for (const channel in list[event.did])
+            try {
+                ensureValidDid(event.did);
+            } catch (err) {
+                console.warn("Invalid handle: " + event.did + " - Skipping");
+                return;
+            }
+
+            if (await SubscriberConfigv2.exists({ did: event.did }))
+            {
+                console.log("Got new post for: " + event.did);
+            }
+            else {
+                return;
+            }
+
+            const user = await SubscriberConfigv2.findOne({ did: event.did });
+
+            const channels = user?.props as unknown as IDictionary;
+            
+            for (const channel in channels)
             {
                 //@ts-expect-error
-                const regex = list[event.did][channel].regex == undefined || list[event.did][channel].regex == null ? "" : list[event.did][channel].regex;
+                const regex = channels[channel].regex == undefined ? channels[channel].regex == "" : channels[channel].regex;
                 //@ts-expect-error
-                const message = list[event.did][channel].message  == undefined || list[event.did][channel].message == null ? "" : list[event.did][channel].message == "" ? list[event.did][channel].message : list[event.did][channel].message + "\n";
+                const message = channels[channel].message == undefined || channels[channel].message == "" ? "" : channels[channel].message + "\n";
                 //@ts-expect-error
-                const replies = list[event.did][channel].replies == undefined || list[event.did][channel].replies == null ? false : list[event.did][channel].replies;
+                const replies = channels[channel].replies == undefined ? false : channels[channel].replies;
                 //@ts-expect-error
-                const embed = list[event.did][channel].embed == undefined || list[event.did][channel].embed == null ? "bskye.app" : list[event.did][channel].embed;
+                const embed = channels[channel].embed == undefined || channels[channel].embed == "" ? "bskye.app" : channels[channel].embed;
 
                 try {
                     const gChannel = this.client.channels.cache.get(channel) as TextChannel;
@@ -300,7 +326,7 @@ export default class Ready extends Event {
                             try {
                                 await gChannel.send(`${message}https://${embed}/profile/${event.did}/post/${event.commit.rkey}`);
                             } catch (err) {
-                                const owner = await (await gChannel.guild).fetchOwner()
+                                const owner = await gChannel.guild.fetchOwner()
                                 try {
                                     await owner?.send({
                                         embeds: [new EmbedBuilder()
@@ -317,7 +343,7 @@ export default class Ready extends Event {
                     }
                     else
                     {
-                        const owner = await (await gChannel.guild).fetchOwner()
+                        const owner = await gChannel.guild.fetchOwner()
                         try {
                             await owner?.send({
                                 embeds: [new EmbedBuilder()
