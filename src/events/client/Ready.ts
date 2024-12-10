@@ -56,6 +56,22 @@ export default class Ready extends Event {
 
         stream.on("error", async (event: any) => {
             console.error("Something went wrong with the Jetstream\n", event);
+
+            // Register stream
+            const _stream = new Jetstream({
+                endpoint: "wss://jetstream2.us-east.bsky.network/subscribe",
+            });
+
+            _stream.on("open", async (event: any) => {
+                console.log("Jetstream connected.");
+                this.updateStreamDID(stream)
+            });
+
+            _stream.on("error", async (event: any) => {
+                console.error("Something went wrong with the Jetstream\n", event);
+            });
+
+            this.initJetstream(_stream);
         })
 
         // Main loop stuff
