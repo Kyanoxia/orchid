@@ -70,7 +70,6 @@ export default class Ready extends Event {
 
             _stream.on("open", async (event: any) => {
                 console.log("Jetstream connected.");
-                this.updateStreamDID(stream)
             });
 
             _stream.on("error", async (event: any) => {
@@ -260,18 +259,6 @@ export default class Ready extends Event {
             [index: string]: Object;
         }
 
-        var lst = {} as IDictionary;
-
-        var did: string[] = [];
-
-        const db = await SubscriberConfigv2.find({});
-
-        for (const i in db) {
-            did.push(db[i].did);
-
-            lst[db[i].did] = db[i].props;
-        }
-
         stream.onCreate("app.bsky.feed.post", async (event) => {
             try {
                 ensureValidDid(event.did);
@@ -304,8 +291,8 @@ export default class Ready extends Event {
                 const embed = channels[channel].embed == undefined || channels[channel].embed == "" ? "bskye.app" : channels[channel].embed;
 
                 try {
-                    const gChannel = this.client.channels.cache.get(channel) as TextChannel;
-                    if (gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
+                    const gChannel = await this.client.channels.fetch(channel) as TextChannel;
+                    if (await gChannel.guild.members.me?.permissionsIn(gChannel).has("SendMessages"))
                     {
                         //@ts-expect-error
                         var match = regex != "" ? this.toRegExp(regex!).test(event.commit.record.text) : false;
