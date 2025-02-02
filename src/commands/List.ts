@@ -66,7 +66,7 @@ export default class GetDatabase extends Command {
                 .setColor("#5AB8FE")
                 .setDescription(`${message}`)
                 .setFooter({ text: "For more information, please visit the bot's README (available through the embed link)", iconURL: this.client.user?.displayAvatarURL() })
-                .setURL("https://github.com/Kyanoxia/skycord")
+                .setURL("https://github.com/Kyanoxia/orchid")
                 .setTitle("Subscribed Accounts")
         ] });
     }

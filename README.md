@@ -3,7 +3,7 @@ Gracefully connect your Bluesky account to any Discord channel
 
 <sup>currently limited to non-nsfw until May 1 2025</sup>
 
-<img src="https://github.com/Kyanoxia/skycord/blob/main/assets/SocialHero.png" alt="orchid banner" width="100%"/>
+<img src="https://github.com/Kyanoxia/orchid/blob/main/assets/SocialHero.png" alt="orchid banner" width="100%"/>
 
 <p align="center">
   <a href='https://ko-fi.com/kyanoxia'><img src='https://img.shields.io/badge/Buy%20Me%20a%20Coffee!-whitesmoke?style=for-the-badge&logo=kofi&logoColor=whitesmoke&labelColor=dimgray&color=dimgray' alt='Buy Me a Coffee at ko-fi.com' /></a>
