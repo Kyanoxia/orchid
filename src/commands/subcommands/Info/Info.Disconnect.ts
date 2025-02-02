@@ -21,7 +21,7 @@ export default class InfoDisconnect extends SubCommand {
                         > **\`username\`** Handle or DID of the user you wish to disconnect
                          `)
                 .setFooter({ text: "For more information, please visit the bot's README (available through the embed link)", iconURL: this.client.user?.displayAvatarURL() })
-                .setURL("https://github.com/Kyanoxia/skycord?tab=readme-ov-file#commands")
+                .setURL("https://github.com/Kyanoxia/orchid?tab=readme-ov-file#commands")
                 .setTitle("/disconnect")
         ] });
     }
