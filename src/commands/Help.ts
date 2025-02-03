@@ -7,7 +7,7 @@ export default class Help extends Command {
     constructor(client: CustomClient) {
         super(client, {
             name: "help",
-            description: "Display Skycord help",
+            description: "Display Orchid help",
             category: Category.Utilities,
             default_member_permissions: PermissionsBitField.Flags.UseApplicationCommands,
             global_permission: true,
@@ -25,7 +25,7 @@ export default class Help extends Command {
                 .setColor("#8AC3FF")
                 .setDescription(`
                         > **\`/botinfo\`**
-                        > Display information about Skycord
+                        > Display information about Orchid
 
                         > **\`/connect\`**
                         > Connect a user account

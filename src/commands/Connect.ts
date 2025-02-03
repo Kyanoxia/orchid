@@ -165,7 +165,7 @@ export default class Connect extends Command {
             await interaction.editReply({ embeds: [new EmbedBuilder()
                 .setColor("Green")
                 .setDescription(`✅ Subscribed to user ${interaction.options.getString("username")} in channel <#${interaction.channelId}>`)
-                .setFooter({ text: "If you're not already, consider self-hosting Skycord (Instructions on GitHub)", iconURL: this.client.user?.displayAvatarURL() })
+                .setFooter({ text: "If you're not already, consider self-hosting Orchid (Instructions on GitHub)", iconURL: this.client.user?.displayAvatarURL() })
             ]
             });
         } catch (err) {

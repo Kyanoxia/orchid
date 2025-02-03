@@ -15,7 +15,7 @@ export default class InfoBotinfo extends SubCommand {
                 .setThumbnail(this.client.user?.displayAvatarURL()!)
                 .setColor("#8AC3FF")
                 .setDescription(`
-                        Display information about Skycord.
+                        Display information about Orchid.
                         __**Usage:**__
                         \`/botinfo\`
                          `)

@@ -17,7 +17,7 @@ To start, please invite the bot to your server using [this URL](https://discord.
 **`<>` indicates required, `[]` indicates optional**
 |    **Command Name**   |               **Description**               |                             **Usage**                              |
 | --------------------- | ------------------------------------------- | ------------------------------------------------------------------ |
-| `/botinfo`            | (global) Display information about Skycord  | `/botinfo`                                                         |
+| `/botinfo`            | (global) Display information about Orchid  | `/botinfo`                                                         |
 | `/connect`            | Connect your BlueSky account                | `/connect <handle> [embed provider] [replies] [message] [regex]`   |
 | `/disconnect`         | Disconnect your BlueSky account             | `/disconnect <handle>`                                             |
 | `/help`               | Display help page                           | `/help`                                                            |
