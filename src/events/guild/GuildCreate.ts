@@ -17,8 +17,8 @@ export default class GuildCreat extends Event {
         const owner = await guild.fetchOwner();
         owner?.send({ embeds: [new EmbedBuilder()
             .setColor("Green")
-            .setDescription("✅ Skycord has been successfully added to your server!")
-            .setFooter({ text: "For the time being, Skycord can NOT announce posts in NSFW channels", iconURL: this.client.user?.displayAvatarURL() })
+            .setDescription("✅ Orchid has been successfully added to your server!")
+            .setFooter({ text: "For the time being, Orchid can NOT announce posts in NSFW channels", iconURL: this.client.user?.displayAvatarURL() })
         ]})
         .catch();
     }

@@ -318,7 +318,7 @@ export default class Ready extends Event {
                                     await owner?.send({
                                         embeds: [new EmbedBuilder()
                                             .setColor("Red")
-                                            .setDescription("❌ Skycord tried to send an announcement but something went wrong!  Please make sure Skycord has necessary permissions, and try again.")
+                                            .setDescription("❌ Orchid tried to send an announcement but something went wrong!  Please make sure Orchid has necessary permissions, and try again.")
                                         ]
                                     });
                                 } catch (err) {
@@ -335,7 +335,7 @@ export default class Ready extends Event {
                             await owner?.send({
                                 embeds: [new EmbedBuilder()
                                     .setColor("Red")
-                                    .setDescription("❌ Skycord tried to send an announcement but it doesn't have permission!  Please make sure Skycord has necessary permissions, and try again.")
+                                    .setDescription("❌ Orchid tried to send an announcement but it doesn't have permission!  Please make sure Orchid has necessary permissions, and try again.")
                                 ]
                             });
                         } catch (err) {
