@@ -1,0 +1,34 @@
+{
+  "name": "orchid",
+  "version": "2.0.0",
+  "description": "Gracefully bridging your Bluesky and Discord together",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "rimraf dist && tsc && tsc-alias && node ./build/src/index.js"
+  },
+  "keywords": [],
+  "author": "Kyanoxia",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@atproto/identity": "^0.4.9",
+    "@mikro-orm/better-sqlite": "^6.5.2",
+    "@mikro-orm/core": "^6.5.2",
+    "@mikro-orm/migrations": "^6.4.16",
+    "@mikro-orm/reflection": "^6.4.16",
+    "@skyware/jetstream": "^0.2.5",
+    "@types/node": "^24.0.3",
+    "bcryptjs": "^3.0.2",
+    "discord.js": "^14.20.0",
+    "dotenv": "^16.5.0",
+    "glob": "^11.0.3",
+    "typescript": "^5.8.3",
+    "uuid": "^11.1.0",
+    "ws": "^8.18.3"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.1",
+    "tsc-alias": "^1.8.16"
+  }
+}
